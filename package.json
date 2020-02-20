@@ -1,0 +1,52 @@
+{
+  "name": "@ne1410s/griddler",
+  "version": "0.0.1",
+  "description": "Complete package for creating, sharing and solving griddler grids!",
+  "main": "dist/ne14_grid.cjs.min.js",
+  "module": "dist/ne14_grid.esm.min.js",
+  "browser": "dist/ne14_grid.umd.min.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "npx rollup -c rollup.browser.config.js -m -w",
+    "clean": "npx rimraf dist",
+    "build": "npm run clean && npx rollup -c",
+    "publish-local": "npm run build && npm pack",
+    "publish-patch": "npm run build && npm version patch && npm publish --access public",
+    "publish-minor": "npm run build && npm version minor && npm publish --access public",
+    "publish-major": "npm run build && npm version major && npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ne1410s/ne14.griddler.git"
+  },
+  "keywords": [
+    "Griddler",
+    "grid",
+    "solving",
+    "algorithm"
+  ],
+  "author": "ne1410s <pgj646@gmail.com> (http://ne1410s.co.uk)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ne1410s/ne14.griddler/issues"
+  },
+  "homepage": "https://github.com/ne1410s/ne14.griddler#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "@rollup/plugin-typescript": "^3.0.0",
+    "@rollup/plugin-url": "^4.0.2",
+    "rimraf": "^3.0.1",
+    "rollup": "^1.31.0",
+    "rollup-plugin-terser": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.26.0",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "@ne1410s/cust-elems": "file:../ne14.cust-elems/ne1410s-cust-elems-0.0.1.tgz",
+    "@ne1410s/dom": "^0.1.2"
+  }
+}
