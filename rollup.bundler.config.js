@@ -16,9 +16,7 @@ export default {
   ],
   plugins: [
     typescript(),
-    terser({
-      include: ['*.cjs.min.js', '*.esm.min.js']
-    }),
+    terser({ include: ['*.cjs.min.js', '*.esm.min.js'] }),
     url({ include: ['src/**/*.css', 'src/**/*.html'] })
   ]
 };

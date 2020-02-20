@@ -1,8 +1,8 @@
-import { CustElem } from '@ne1410s/cust-elems';
+import { CustomElementBase } from '@ne1410s/cust-elems';
 import markupUrl from './griddler.html';
 import stylesUrl from './griddler.css';
 
-export class Griddler extends CustElem {
+export class Griddler extends CustomElementBase {
   
   // static observedAttributes = ['open'];
 

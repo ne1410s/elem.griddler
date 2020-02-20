@@ -46,7 +46,7 @@
     "typescript": "^3.7.5"
   },
   "dependencies": {
-    "@ne1410s/cust-elems": "file:../ne14.cust-elems/ne1410s-cust-elems-0.0.1.tgz",
+    "@ne1410s/cust-elems": "0.0.1",
     "@ne1410s/dom": "^0.1.2"
   }
 }

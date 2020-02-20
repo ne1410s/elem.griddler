@@ -21,9 +21,7 @@ export default {
     resolve(), // find external modules
     commonjs(), // convert external modules to ES modules
     typescript(),
-    terser({
-      include: '*.umd.min.js'
-    }),
+    terser({ include: '*.umd.min.js' }),
     url({ include: ['src/**/*.css', 'src/**/*.html'] })
   ]
 };
