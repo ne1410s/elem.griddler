@@ -1,4 +1,13 @@
-div {
-  background: green;
-  margin: 1em;
+.root {
+  position: relative;
+}
+
+#grid {
+  border: 1px dashed #ddd;
+}
+
+#hilite {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
 }
