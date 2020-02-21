@@ -14,7 +14,7 @@ export class Griddler extends CustomElementBase {
   private static readonly MINOR_COL = '#eee';
   private static readonly MAJOR_COL = '#555';
   private static readonly HIGHLIGHT = 'rgba(0, 0, 200, 0.4)';
-  private static readonly RESOLUTION = 10;
+  private static readonly RESOLUTION = 2;
 
   private static readonly SIZE_MIN = 5 * Griddler.RESOLUTION;
   private static readonly SIZE_MAX = 50 * Griddler.RESOLUTION;
@@ -68,7 +68,7 @@ export class Griddler extends CustomElementBase {
     this.totalWidth = grid_w + labels_w;
     this.totalHeight = grid_h + labels_h;
     const client_w = this.totalWidth / Griddler.RESOLUTION;
-    this.root.querySelector('.root').setAttribute('style', `max-width: ${client_w}px`);
+    this.root.querySelector('.root').setAttribute('style', `width: ${client_w}px`);
 
     const gridContext = this._gridCanvas.getContext('2d');
     this.clear(gridContext);
