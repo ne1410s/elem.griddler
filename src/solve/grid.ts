@@ -1,5 +1,8 @@
-import { SetType, Label, CellState, HintResult, SolveResult, Utils } from "./models";
+import { SetType, CellState } from "./enums";
 import { FullSet } from "./full-set";
+import { Label } from "./label";
+import { HintResult, SolveResult } from "./result";
+import { Utils } from "./utils";
 
 /** A griddler grid. */
 export class Grid {
@@ -74,8 +77,8 @@ export class Grid {
   public init(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    this._rowLabelCache = Utils.fillArray(this.height, () => []);
-    this._columnLabelCache = Utils.fillArray(this.width, () => []);
+    this._rowLabelCache = Utils.fillArray(this.height, (): any[] => []);
+    this._columnLabelCache = Utils.fillArray(this.width, (): any[] => []);
     this._cellCache = this._columnLabelCache
       .map(n => Utils.fillArray(this.height, () => CellState.Blank));
   }
