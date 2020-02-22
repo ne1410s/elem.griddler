@@ -11,10 +11,10 @@ export class Griddler extends CustomElementBase {
   private static readonly XY_INTERVAL = 5;
   private static readonly DEF_X = 25;
   private static readonly DEF_Y = 35;
+  private static readonly RESOLUTION = 2;
   private static readonly MINOR_COL = '#eee';
   private static readonly MAJOR_COL = '#555';
   private static readonly HIGHLIGHT = 'rgba(0, 0, 200, 0.4)';
-  private static readonly RESOLUTION = 2;
 
   private static readonly SIZE_MIN = 5 * Griddler.RESOLUTION;
   private static readonly SIZE_MAX = 50 * Griddler.RESOLUTION;
