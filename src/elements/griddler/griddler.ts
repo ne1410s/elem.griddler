@@ -1,6 +1,7 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
 import markupUrl from './griddler.html';
 import stylesUrl from './griddler.css';
+import { PortableGrid } from '../../portable-grid';
 
 export class Griddler extends CustomElementBase {
 
@@ -9,8 +10,7 @@ export class Griddler extends CustomElementBase {
   private static readonly XY_MIN = 5;
   private static readonly XY_MAX = 1000;
   private static readonly XY_INTERVAL = 5;
-  private static readonly DEF_X = 25;
-  private static readonly DEF_Y = 35;
+  private static readonly XY_DEF = 5;
   private static readonly RESOLUTION = 2;
   private static readonly MINOR_COL = '#eee';
   private static readonly MAJOR_COL = '#555';
@@ -21,14 +21,13 @@ export class Griddler extends CustomElementBase {
   private static readonly SIZE_INTERVAL = 1 * Griddler.RESOLUTION;
   private static readonly DEF_SIZE = 20 * Griddler.RESOLUTION;
   private static readonly PIXEL_ADJUST = .5 * Griddler.RESOLUTION;
-  private static readonly LABEL_ROOM = 5 * Griddler.RESOLUTION;
   
   private readonly _gridCanvas: HTMLCanvasElement;
   private readonly _hiliteCanvas: HTMLCanvasElement;
   private readonly _hiliteContext: CanvasRenderingContext2D;
   
-  private _cols = Griddler.DEF_X;
-  private _rows = Griddler.DEF_Y;
+  private _cols = Griddler.XY_DEF;
+  private _rows = Griddler.XY_DEF;
   private _size = Griddler.DEF_SIZE;
 
   get totalWidth(): number { return this._gridCanvas.width; }
@@ -54,14 +53,28 @@ export class Griddler extends CustomElementBase {
     this._gridCanvas.addEventListener('mouseleave', () => this.clear(this._hiliteContext));
     this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => this.onMouseMove(e));
     this._gridCanvas.addEventListener('click', (e: MouseEvent) => this.onMouseClick(e));
-  }  
+  }
 
   /**
-   * Draws a new grid according to the current size configuration.
+   * Draws a grid according to the grid data supplied.
+   * @param grid The grid data.
+   */
+  load(grid: PortableGrid) {
+    this._cols = grid.columns.length;
+    this._rows = grid.rows.length;
+    this.redraw();
+
+    console.log('populate labels and state for:', grid);
+    // populate labels
+    // populate cell state
+  }
+
+  /**
+   * Draws a blank grid according to the current size configuration.
    */
   redraw(): void {
-    const labels_w = this._cols * Griddler.LABEL_ROOM;
-    const labels_h = this._rows * Griddler.LABEL_ROOM;
+    const labels_w = this._cols * this._size / 5;
+    const labels_h = this._rows * this._size / 5;
     const grid_w = this._cols * this._size + Griddler.PIXEL_ADJUST;
     const grid_h = this._rows * this._size + Griddler.PIXEL_ADJUST;
 
@@ -100,11 +113,12 @@ export class Griddler extends CustomElementBase {
     gridContext.lineWidth = Griddler.RESOLUTION;
     gridContext.stroke();    
     gridContext.closePath();
+
+    this._hiliteContext.fillStyle = Griddler.HIGHLIGHT;
   }
 
   connectedCallback() {
     this.redraw();
-    this._hiliteContext.fillStyle = Griddler.HIGHLIGHT;
   }
   
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -112,7 +126,7 @@ export class Griddler extends CustomElementBase {
       case 'cols':
         this._cols = Griddler.Round(
           newValue,
-          Griddler.DEF_X,
+          Griddler.XY_DEF,
           Griddler.XY_INTERVAL,
           Griddler.XY_MIN,
           Griddler.XY_MAX);
@@ -120,7 +134,7 @@ export class Griddler extends CustomElementBase {
       case 'rows':
         this._rows = Griddler.Round(
           newValue,
-          Griddler.DEF_Y,
+          Griddler.XY_DEF,
           Griddler.XY_INTERVAL,
           Griddler.XY_MIN,
           Griddler.XY_MAX);

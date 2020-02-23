@@ -1,4 +1,6 @@
-import { CellSetBase, LabelSetLink, BlockSet, Label, SpaceSet, SetType, CellState } from "./models";
+import { LabelSetLink, Label } from "./label";
+import { CellSetBase, BlockSet, SpaceSet } from "./cell-set";
+import { SetType, CellState } from "./enums";
 
 /** A complete set of cells - representing a column or row. */
 export class FullSet extends CellSetBase {
@@ -330,7 +332,7 @@ export class FullSet extends CellSetBase {
     let prevBlock: BlockSet;
     let prevInReach: boolean;
     let labelIndex: number;
-    const labelAssignment: any = [];
+    const labelAssignment: number[][] = [];
 
     // Assemble distinct block count by label index
     this.blocks.forEach((currBlock, blockIndex) => {

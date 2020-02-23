@@ -3,23 +3,24 @@ import { FullSet } from "./full-set";
 import { Label } from "./label";
 import { HintResult, SolveResult } from "./result";
 import { Utils } from "./utils";
+import { PortableGrid, PortableSet, PortableDataSet } from "../portable-grid";
 
 /** A griddler grid. */
 export class Grid {
 
-  public static load(gridObject: any): Grid {
+  public static load(gridObject: PortableGrid): Grid {
     const grid = new Grid();
     grid.init(gridObject.columns.length, gridObject.rows.length);
-    gridObject.columns.forEach((col: any, colIdx: number) => {
+    gridObject.columns.forEach((col: PortableSet, colIdx: number) => {
       grid.setLabels(SetType.Column, colIdx, col.labels);
     });
 
-    gridObject.rows.forEach((row: any, rowIdx: number) => {
+    gridObject.rows.forEach((row: PortableDataSet, rowIdx: number) => {
       grid.setLabels(SetType.Row, rowIdx, row.labels);
       (row.cells || [])
-        .map((cell: any, cellIdx: number) => ({ oState: cell, idx: cellIdx }))
-        .filter((obj: any) => obj.oState !== 0)
-        .forEach((obj: any) => {
+        .map((cell: 0 | 1 | 2, cellIdx: number) => ({ oState: cell, idx: cellIdx }))
+        .filter(obj => obj.oState !== 0)
+        .forEach(obj => {
           const state = obj.oState === 1 ? CellState.Filled : CellState.Marked;
           grid.setState(SetType.Row, rowIdx, obj.idx, state);
         });
@@ -28,12 +29,12 @@ export class Grid {
   }
 
   /** Convenience method for solving an object in a single line. */
-  public static solve(gridObject: any): SolveResult {
+  public static solve(gridObject: PortableGrid): SolveResult {
     return Grid.load(gridObject).solve();
   }
 
   /** Convenience method for hinting an object in a single line. */
-  public static hint(gridObject: any): HintResult {
+  public static hint(gridObject: PortableGrid): HintResult {
     return Grid.load(gridObject).hint();
   }
 
@@ -61,7 +62,7 @@ export class Grid {
       .some(state => state === CellState.Blank);
   }
 
-  public get gridObject(): any {
+  public get gridObject(): PortableGrid {
     return {
       columns: this._columnLabelCache.map((n, c) => ({ labels: this.getLabels(SetType.Column, c) })),
       rows: this._rowLabelCache.map((n, r) => {
@@ -77,8 +78,8 @@ export class Grid {
   public init(width: number, height: number): void {
     this.width = width;
     this.height = height;
-    this._rowLabelCache = Utils.fillArray(this.height, (): any[] => []);
-    this._columnLabelCache = Utils.fillArray(this.width, (): any[] => []);
+    this._rowLabelCache = Utils.fillArray(this.height, () => []);
+    this._columnLabelCache = Utils.fillArray(this.width, () => []);
     this._cellCache = this._columnLabelCache
       .map(n => Utils.fillArray(this.height, () => CellState.Blank));
   }
@@ -139,7 +140,7 @@ export class Grid {
       : this._columnLabelCache[index];
   }
 
-  private solveSetsRecursively(colsrows: [number[], number[]], shallow: boolean = false): any {
+  private solveSetsRecursively(colsrows: [number[], number[]], shallow: boolean = false) {
     const allUnsolvedHintworthy = colsrows[0]
       .map(c => this.getFullSet(SetType.Column, c))
       .concat(colsrows[1].map(r => this.getFullSet(SetType.Row, r)))
