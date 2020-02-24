@@ -1,13 +1,13 @@
-import { PortableGrid } from "../portable-grid";
+import { PlainGrid } from "../format/plain-grid";
 
 /** The outcome of running a 'solve' grid method. */
 export class SolveResult {
 
-  public readonly grid: PortableGrid;
-  public readonly brokenGrid: PortableGrid;
+  public readonly grid: PlainGrid;
+  public readonly brokenGrid: PlainGrid;
 
   constructor(
-    gridObject: PortableGrid,
+    gridObject: PlainGrid,
     public readonly solved: boolean,
     public readonly solvedMs: number) {
 

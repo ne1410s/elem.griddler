@@ -2,20 +2,19 @@ import { SetType, CellState } from "./enums";
 import { FullSet } from "./full-set";
 import { Label } from "./label";
 import { HintResult, SolveResult } from "./result";
-import { Utils } from "./utils";
-import { PortableGrid, PortableSet, PortableDataSet } from "../portable-grid";
+import { Utils } from "../format/utils";
+import { PlainGrid, PlainSet, PlainDataSet } from "../format/plain-grid";
 
 /** A griddler grid. */
 export class Grid {
 
-  public static load(gridObject: PortableGrid): Grid {
-    const grid = new Grid();
-    grid.init(gridObject.columns.length, gridObject.rows.length);
-    gridObject.columns.forEach((col: PortableSet, colIdx: number) => {
+  public static load(gridObject: PlainGrid): Grid {
+    const grid = new Grid(gridObject.columns.length, gridObject.rows.length);
+    gridObject.columns.forEach((col: PlainSet, colIdx: number) => {
       grid.setLabels(SetType.Column, colIdx, col.labels);
     });
 
-    gridObject.rows.forEach((row: PortableDataSet, rowIdx: number) => {
+    gridObject.rows.forEach((row: PlainDataSet, rowIdx: number) => {
       grid.setLabels(SetType.Row, rowIdx, row.labels);
       (row.cells || [])
         .map((cell: 0 | 1 | 2, cellIdx: number) => ({ oState: cell, idx: cellIdx }))
@@ -26,16 +25,6 @@ export class Grid {
         });
     });
     return grid;
-  }
-
-  /** Convenience method for solving an object in a single line. */
-  public static solve(gridObject: PortableGrid): SolveResult {
-    return Grid.load(gridObject).solve();
-  }
-
-  /** Convenience method for hinting an object in a single line. */
-  public static hint(gridObject: PortableGrid): HintResult {
-    return Grid.load(gridObject).hint();
   }
 
   public width: number;
@@ -62,7 +51,7 @@ export class Grid {
       .some(state => state === CellState.Blank);
   }
 
-  public get gridObject(): PortableGrid {
+  public get gridObject(): PlainGrid {
     return {
       columns: this._columnLabelCache.map((n, c) => ({ labels: this.getLabels(SetType.Column, c) })),
       rows: this._rowLabelCache.map((n, r) => {
@@ -75,13 +64,13 @@ export class Grid {
     };
   }
 
-  public init(width: number, height: number): void {
+  private constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
     this._rowLabelCache = Utils.fillArray(this.height, () => []);
     this._columnLabelCache = Utils.fillArray(this.width, () => []);
     this._cellCache = this._columnLabelCache
-      .map(n => Utils.fillArray(this.height, () => CellState.Blank));
+      .map(() => Utils.fillArray(this.height, () => CellState.Blank));
   }
 
   public hint(): HintResult {
