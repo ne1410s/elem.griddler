@@ -28,7 +28,7 @@ export abstract class XGrid {
         if (!acc.symbol) { acc.symbol = symbol };
         if (acc.symbol === symbol) { acc.count++; }
         if (acc.count !== 0 && (acc.symbol !== symbol || i === plain.rows.length - 1)) {
-          acc.items.push(`${acc.symbol}${acc.count}`);
+          acc.items.push(`${acc.symbol}${acc.count === 1 ? '' : acc.count}`);
           acc.symbol = symbol;
           acc.count = 1;
         }
@@ -52,7 +52,6 @@ export abstract class XGrid {
   }
 
   private static ToPlain(dense: DenseGrid): PlainGrid {
-
     const cols = dense.c.split('|');
     const rows = dense.r.split('|');
     const retVal = XGrid.CreatePlain(cols.length, rows.length);
@@ -67,9 +66,9 @@ export abstract class XGrid {
       const labels = dataArray.map(l => parseInt(l)).filter(n => !isNaN(n));
       r.labels = labels.length > 0 ? labels : [];
       if (dataArray.length === 1 + labels.length) {
-        r.cells = dataArray.pop().split(/(?=[mfe]\d+)/).reduce((acc, cur) => {
+        r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
           const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
-          const freq = parseInt(cur.substring(1));
+          const freq = parseInt(cur.substring(1)) || 1;
           acc = acc.concat(Utils.fillArray(freq, () => numero));
           return acc;
         }, []);
