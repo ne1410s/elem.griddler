@@ -240,9 +240,9 @@ export class Griddler extends CustomElementBase {
       if (celRef[ci] !== state) {
         celRef[ci] = state;
         point.ctx.beginPath();
-        this.setCell(point.ctx, ci, ri, true);
+        this.setCell(point.ctx, ci, ri, false);
         switch (state) {
-          case 1: this.setCell(point.ctx, ci, ri, false); break;
+          case 1: this.setCell(point.ctx, ci, ri, true); break;
           case 2: this.markCell(point.ctx, ci, ri); break;
         }
         point.ctx.fill();
@@ -257,9 +257,9 @@ export class Griddler extends CustomElementBase {
     ctx.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
   }
 
-  private setCell(ctx: CanvasRenderingContext2D, ci: number, ri: number, doEmpty: boolean) {
+  private setCell(ctx: CanvasRenderingContext2D, ci: number, ri: number, doFill: boolean) {
     const buffer = 2 * Griddler.PIXEL_ADJUST;
-    const method = doEmpty ? 'clearRect' : 'rect';
+    const method = doFill ? 'rect' : 'clearRect';
     ctx[method](
       ci * this._size + buffer,
       ri * this._size + buffer,
@@ -277,7 +277,7 @@ export class Griddler extends CustomElementBase {
         .map((state, idx) => ({ state, idx }))
         .forEach(cell => {
           switch (cell.state) {
-            case 1: this.fillCell(gridContext, cell.idx, row.idx); break;
+            case 1: this.setCell(gridContext, cell.idx, row.idx, true); break;
             case 2: this.markCell(gridContext, cell.idx, row.idx); break;
           }
         })
