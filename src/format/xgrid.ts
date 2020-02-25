@@ -42,6 +42,11 @@ export abstract class XGrid {
       r: plain.rows.map(r => `${(r.labels || []).join('.')}${derive(r)}`).join('|'),
     };
   }
+
+  public static WipeCells(plain: PlainGrid): void {
+    const emptyRow = Utils.fillArray(plain.columns.length, (): 0 => 0);
+    plain.rows.forEach(r => r.cells = emptyRow.slice());
+  }
   
   private static CreatePlain(columns: number, rows: number): PlainGrid {
     const emptyRow = Utils.fillArray(columns, (): 0 => 0);

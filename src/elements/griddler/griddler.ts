@@ -1,10 +1,10 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
-import markupUrl from './griddler.html';
-import stylesUrl from './griddler.css';
 import { PlainGrid } from '../../format/plain-grid';
 import { Grid } from '../../solve/grid';
 import { XGrid } from '../../format/xgrid';
 import { DenseGrid } from '../../format/dense-grid';
+import markupUrl from './griddler.html';
+import stylesUrl from './griddler.css';
 
 export class Griddler extends CustomElementBase {
 
@@ -49,46 +49,59 @@ export class Griddler extends CustomElementBase {
   }
 
   constructor() {
-    super(stylesUrl, markupUrl);
 
+    super(stylesUrl, markupUrl);
     this._gridCanvas = this.root.querySelector('canvas#grid');
     this._hiCanvas = this.root.querySelector('canvas#hilite');
     this._hiContext = this._hiCanvas.getContext('2d');
     this._hiContext.imageSmoothingEnabled = false;
 
     this._gridCanvas.addEventListener('mouseleave', () => { 
-      this.clearContext(this._hiContext);
+      if (!this._downCoords) this.clearContext(this._hiContext);
     });
     this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => {
       const moveCoords = this.getCoords(e);
-      this.highlight(moveCoords);
-
-      if (this._downCoords && !this._downCoords.state && !moveCoords.state) {
-        this.setState(moveCoords, 1);
+      
+      // If not left-button-initiated (or else moving on initial-cell)
+      if (this._downCoords?.which !== 1 || (this._downCoords.x === moveCoords.x && this._downCoords.y === moveCoords.y)) {
+        this.highlight(moveCoords);
+      }
+      
+      // If ripe for the paintin'
+      if (this._downCoords?.x === moveCoords.x || this._downCoords?.y === moveCoords.y) {
+        
+        // Left button drag on empty cells:
+        if (moveCoords.state === 0 && this._downCoords.which === 1) {
+          this.setState(moveCoords, 1);
+        }
       }
     });
-
     this._gridCanvas.addEventListener('mousedown', event => {
       this._downCoords = this.getCoords(event);
     });
-
     this._gridCanvas.addEventListener('mouseup', event => {
-
+      event.stopImmediatePropagation();
       if (this._downCoords) {
         const upCoords = this.getCoords(event);
         if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
           switch (this._downCoords.which) {
-            case 1: this.log(upCoords); break;
-            case 3: console.log('right click'); break;
+            case 1:
+              const next = (this._downCoords.state + 1) % 3;
+              this.setState(this._downCoords, next as 0 | 1 | 2);
+              break;
+            case 3:
+              /* right-click */
+              break;
           }
         }
 
         this._downCoords = null;
       }
     });
-
-
-    //this._gridCanvas.addEventListener('click', (e: MouseEvent) => this.log(this.getCoords(e)));
+    window.addEventListener('mouseup', (event: any) => {
+      this._downCoords = null;
+      this.clearContext(this._hiContext);
+    });
 
     this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
     this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
@@ -106,7 +119,7 @@ export class Griddler extends CustomElementBase {
 
   /** Removes all cell data, leaving the labels intact. */
   clear() {
-    this._grid.rows.forEach(r => r.cells = null);
+    XGrid.WipeCells(this._grid);
     this.refresh();
   }
 
@@ -227,9 +240,9 @@ export class Griddler extends CustomElementBase {
       if (celRef[ci] !== state) {
         celRef[ci] = state;
         point.ctx.beginPath();
+        this.setCell(point.ctx, ci, ri, true);
         switch (state) {
-          case 0: this.emptyCell(point.ctx, ci, ri); break;
-          case 1: this.fillCell(point.ctx, ci, ri); break;
+          case 1: this.setCell(point.ctx, ci, ri, false); break;
           case 2: this.markCell(point.ctx, ci, ri); break;
         }
         point.ctx.fill();
@@ -244,19 +257,14 @@ export class Griddler extends CustomElementBase {
     ctx.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
   }
 
-  private fillCell(ctx: CanvasRenderingContext2D, ci: number, ri: number) {
-    ctx.rect(
-      ci * this._size + Griddler.PIXEL_ADJUST,
-      ri * this._size + Griddler.PIXEL_ADJUST,
-      this._size, this._size);
-  }
-
-  private emptyCell(ctx: CanvasRenderingContext2D, ci: number, ri: number) {
-    ctx.clearRect(
-      ci * this._size + Griddler.PIXEL_ADJUST,
-      ri * this._size + Griddler.PIXEL_ADJUST,
-      this._size, this._size
-    );
+  private setCell(ctx: CanvasRenderingContext2D, ci: number, ri: number, doEmpty: boolean) {
+    const buffer = 2 * Griddler.PIXEL_ADJUST;
+    const method = doEmpty ? 'clearRect' : 'rect';
+    ctx[method](
+      ci * this._size + buffer,
+      ri * this._size + buffer,
+      this._size - buffer,
+      this._size - buffer);
   }
 
   private populate(gridContext: CanvasRenderingContext2D) {
