@@ -26,11 +26,12 @@ export class Griddler extends CustomElementBase {
   private static readonly PIXEL_ADJUST = .5 * Griddler.RESOLUTION;
   
   private readonly _gridCanvas: HTMLCanvasElement;
-  private readonly _hiliteCanvas: HTMLCanvasElement;
-  private readonly _hiliteContext: CanvasRenderingContext2D;
+  private readonly _hiCanvas: HTMLCanvasElement;
+  private readonly _hiContext: CanvasRenderingContext2D;
 
   private _size = Griddler.SIZE_DEF;
   private _grid = XGrid.AsPlain({ x: Griddler.XY_DEF, y: Griddler.XY_DEF });
+  private _downCoords: GridContextPoint;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
@@ -38,26 +39,56 @@ export class Griddler extends CustomElementBase {
   get totalWidth(): number { return this._gridCanvas.width; }
   set totalWidth(value: number) {
     this._gridCanvas.width = value;
-    this._hiliteCanvas.width = value;
+    this._hiCanvas.width = value;
   }
 
   get totalHeight(): number { return this._gridCanvas.height; }
   set totalHeight(value: number) {
     this._gridCanvas.height = value;
-    this._hiliteCanvas.height = value;
+    this._hiCanvas.height = value;
   }
 
   constructor() {
     super(stylesUrl, markupUrl);
 
     this._gridCanvas = this.root.querySelector('canvas#grid');
-    this._hiliteCanvas = this.root.querySelector('canvas#hilite');
-    this._hiliteContext = this._hiliteCanvas.getContext('2d');
-    this._hiliteContext.imageSmoothingEnabled = false;
+    this._hiCanvas = this.root.querySelector('canvas#hilite');
+    this._hiContext = this._hiCanvas.getContext('2d');
+    this._hiContext.imageSmoothingEnabled = false;
 
-    this._gridCanvas.addEventListener('mouseleave', () => this.clearContext(this._hiliteContext));
-    this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => this.onMouseMove(e));
-    this._gridCanvas.addEventListener('click', (e: MouseEvent) => this.onMouseClick(e));
+    this._gridCanvas.addEventListener('mouseleave', () => { 
+      this.clearContext(this._hiContext);
+    });
+    this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => {
+      const moveCoords = this.getCoords(e);
+      this.highlight(moveCoords);
+
+      if (this._downCoords && !this._downCoords.state && !moveCoords.state) {
+        this.setState(moveCoords, 1);
+      }
+    });
+
+    this._gridCanvas.addEventListener('mousedown', event => {
+      this._downCoords = this.getCoords(event);
+    });
+
+    this._gridCanvas.addEventListener('mouseup', event => {
+
+      if (this._downCoords) {
+        const upCoords = this.getCoords(event);
+        if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
+          switch (this._downCoords.which) {
+            case 1: this.log(upCoords); break;
+            case 3: console.log('right click'); break;
+          }
+        }
+
+        this._downCoords = null;
+      }
+    });
+
+
+    //this._gridCanvas.addEventListener('click', (e: MouseEvent) => this.log(this.getCoords(e)));
 
     this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
     this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
@@ -138,7 +169,7 @@ export class Griddler extends CustomElementBase {
     gridContext.stroke();    
     gridContext.closePath();
 
-    this._hiliteContext.fillStyle = Griddler.HIGHLIGHT;
+    this._hiContext.fillStyle = Griddler.HIGHLIGHT;
     
     this.populate(gridContext);
   }
@@ -184,6 +215,50 @@ export class Griddler extends CustomElementBase {
     return Math.max(min, Math.min(max, rnd));
   }
 
+  private getState(point: Point): 0 | 1 | 2 { 
+    return !point.x || !point.y ? null
+      : this._grid.rows[point.y - 1].cells[point.x - 1];
+  }
+
+  private setState(point: GridContextPoint, state: 0 | 1 | 2): void {
+    if (point.x && point.y) {
+      const ci = point.x - 1, ri = point.y - 1;
+      const celRef = this._grid.rows[ri].cells;
+      if (celRef[ci] !== state) {
+        celRef[ci] = state;
+        point.ctx.beginPath();
+        switch (state) {
+          case 0: this.emptyCell(point.ctx, ci, ri); break;
+          case 1: this.fillCell(point.ctx, ci, ri); break;
+          case 2: this.markCell(point.ctx, ci, ri); break;
+        }
+        point.ctx.fill();
+      }
+    }
+  }
+
+  private markCell(ctx: CanvasRenderingContext2D, ci: number, ri: number) {
+    const x0 = ci * this._size + Griddler.PIXEL_ADJUST + (this._size / 2);
+    const y0 = ri * this._size + Griddler.PIXEL_ADJUST + (this._size / 2);
+    ctx.moveTo(x0, y0);
+    ctx.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
+  }
+
+  private fillCell(ctx: CanvasRenderingContext2D, ci: number, ri: number) {
+    ctx.rect(
+      ci * this._size + Griddler.PIXEL_ADJUST,
+      ri * this._size + Griddler.PIXEL_ADJUST,
+      this._size, this._size);
+  }
+
+  private emptyCell(ctx: CanvasRenderingContext2D, ci: number, ri: number) {
+    ctx.clearRect(
+      ci * this._size + Griddler.PIXEL_ADJUST,
+      ri * this._size + Griddler.PIXEL_ADJUST,
+      this._size, this._size
+    );
+  }
+
   private populate(gridContext: CanvasRenderingContext2D) {
 
     // cell states
@@ -194,18 +269,8 @@ export class Griddler extends CustomElementBase {
         .map((state, idx) => ({ state, idx }))
         .forEach(cell => {
           switch (cell.state) {
-            case 1:
-              gridContext.rect(
-                cell.idx * this._size + Griddler.PIXEL_ADJUST,
-                row.idx * this._size + Griddler.PIXEL_ADJUST,
-                this._size, this._size);
-              break;
-            case 2:
-              const x0 = cell.idx * this._size + Griddler.PIXEL_ADJUST + (this._size / 2);
-              const y0 = row.idx * this._size + Griddler.PIXEL_ADJUST + (this._size / 2);
-              gridContext.moveTo(x0, y0);
-              gridContext.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
-              break;
+            case 1: this.fillCell(gridContext, cell.idx, row.idx); break;
+            case 2: this.markCell(gridContext, cell.idx, row.idx); break;
           }
         })
       );
@@ -243,41 +308,47 @@ export class Griddler extends CustomElementBase {
     context.clearRect(0, 0, this.totalWidth, this.totalHeight);
   }
 
-  private getCoords(offsetX: number, offsetY: number): { x: number, y: number } {
-    return {
-      x: Griddler.Round(offsetX * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalColumns),
-      y: Griddler.Round(offsetY * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalRows),
+  private getCoords(locator: { offsetX: number, offsetY: number, which: number }): GridContextPoint {
+    const colIdx = Griddler.Round(locator.offsetX * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalColumns);
+    const rowIdx = Griddler.Round(locator.offsetY * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalRows);
+    const gridDims = { 
+      x: colIdx === this.totalColumns ? null : colIdx + 1,
+      y: rowIdx === this.totalRows ? null : rowIdx + 1,
+    };
+    return { 
+      x: gridDims.x,
+      y: gridDims.y,
+      x0: colIdx * this._size + Griddler.PIXEL_ADJUST,
+      y0: rowIdx * this._size + Griddler.PIXEL_ADJUST,
+      which: locator.which,
+      state: this.getState(gridDims),
+      ctx: this._gridCanvas.getContext('2d'),
     };
   }
 
-  private onMouseMove(event: MouseEvent) {
-
-    const coords = this.getCoords(event.offsetX, event.offsetY);
-    const x0 = coords.x * this._size + Griddler.PIXEL_ADJUST;
-    const y0 = coords.y * this._size + Griddler.PIXEL_ADJUST;
-    this.clearContext(this._hiliteContext);
-    
-    if (coords.x !== this.totalColumns) {
-      this._hiliteContext.fillRect(x0, 0, this._size, this.totalHeight);
-    }
-    if (coords.y !== this.totalRows) {
-      this._hiliteContext.fillRect(0, y0, this.totalWidth, this._size);
-    }
-    if (coords.x !== this.totalColumns && coords.y !== this.totalRows) {
-      this._hiliteContext.clearRect(x0, y0, this._size, this._size);
+  private highlight(coords: GridContextPoint) {
+    this.clearContext(this._hiContext);
+    if (coords.x) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
+    if (coords.y) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
+    if (coords.x && coords.y) {
+      this._hiContext.clearRect(coords.x0, coords.y0, this._size, this._size);
     }
   }
 
-  private onMouseClick(event: MouseEvent) {
-    
-    const coords = this.getCoords(event.offsetX, event.offsetY);
-    if (coords.x === this.totalColumns && coords.y !== this.totalRows) {
-      console.log('Clicked on label for row ' + coords.y);
-    } else if (coords.x !== this.totalColumns && coords.y === this.totalRows) {
-      console.log('Clicked on label for col ' + coords.x);
-    } else if (coords.x !== this.totalColumns && coords.y !== this.totalColumns) {
-      console.log('Click on cell', coords);
-    }
-    
-  } 
+  private log(coords: GridContextPoint) {
+    console.log(coords);
+  }
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface GridContextPoint extends Point {
+  x0: number;
+  y0: number;
+  which: number;
+  state: 0 | 1 | 2;
+  ctx: CanvasRenderingContext2D;
 }
