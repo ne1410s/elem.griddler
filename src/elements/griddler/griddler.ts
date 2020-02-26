@@ -134,12 +134,14 @@ export class Griddler extends CustomElementBase {
     window.addEventListener('keydown', event => {
       console.log('vanilla', event.type);
     });
+
     window.addEventListener('keydown', Utils.Throttle(event => {
-      console.log('throttle', event.type);
-    }));
+      console.log('throttle', event);
+    }, 2000));
+
     window.addEventListener('keydown', Utils.Debounce(event => {
-      console.log('debounce', event.type);
-    }));
+      console.log('debounce', event);
+    }, 2000));
   }
 
   /**
