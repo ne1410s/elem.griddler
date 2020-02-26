@@ -5,6 +5,7 @@ import { XGrid } from '../../format/xgrid';
 import { DenseGrid } from '../../format/dense-grid';
 import markupUrl from './griddler.html';
 import stylesUrl from './griddler.css';
+import { Utils } from '../../format/utils';
 
 export class Griddler extends CustomElementBase {
 
@@ -126,6 +127,19 @@ export class Griddler extends CustomElementBase {
     this.root.querySelector('#btnExport').addEventListener('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
     this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
     this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
+
+
+
+
+    window.addEventListener('keydown', event => {
+      console.log('vanilla', event.type);
+    });
+    window.addEventListener('keydown', Utils.Throttle(event => {
+      console.log('throttle', event.type);
+    }));
+    window.addEventListener('keydown', Utils.Debounce(event => {
+      console.log('debounce', event.type);
+    }));
   }
 
   /**
@@ -248,22 +262,21 @@ export class Griddler extends CustomElementBase {
     return Math.max(min, Math.min(max, rnd));
   }
 
-  private getState(point: Point): 0 | 1 | 2 { 
-    return !point.x || !point.y ? null
-      : this._grid.rows[point.y - 1].cells[point.x - 1];
+  private getState(point: Point): 0 | 1 | 2 {
+    return point.x == null || point.y == null ? null
+      : this._grid.rows[point.y].cells[point.x];
   }
 
   private setState(point: GridContextPoint, state: 0 | 1 | 2): void {
-    if (point.x && point.y) {
-      const ci = point.x - 1, ri = point.y - 1;
-      const celRef = this._grid.rows[ri].cells;
-      if (celRef[ci] !== state) {
-        celRef[ci] = state;
+    if (point.x != null && point.y != null) {
+      const celRef = this._grid.rows[point.y].cells;
+      if (celRef[point.x] !== state) {
+        celRef[point.x] = state;
         this._gridContext.beginPath();
-        this.setCell(ci, ri, false);
+        this.setCell(point.x, point.y, false);
         switch (state) {
-          case 1: this.setCell(ci, ri, true); break;
-          case 2: this.markCell(ci, ri); break;
+          case 1: this.setCell(point.x, point.y, true); break;
+          case 2: this.markCell(point.x, point.y); break;
         }
 
         this._gridContext.fill();
@@ -340,28 +353,27 @@ export class Griddler extends CustomElementBase {
   }
 
   private getCoords(locator: { offsetX: number, offsetY: number, which: number }): GridContextPoint {
-    const colIdx = Griddler.Round(locator.offsetX * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalColumns);
-    const rowIdx = Griddler.Round(locator.offsetY * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalRows);
-    const gridDims = { 
-      x: colIdx === this.totalColumns ? null : colIdx + 1,
-      y: rowIdx === this.totalRows ? null : rowIdx + 1,
-    };
+    const ci = Griddler.Round(locator.offsetX * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalColumns);
+    const ri = Griddler.Round(locator.offsetY * Griddler.RESOLUTION / this._size, 0, 1, 0, this.totalRows);
+    const dims = {
+      x: ci === this.totalColumns ? null : ci,
+      y: ri === this.totalRows ? null : ri,
+    }
     return { 
-      x: gridDims.x,
-      y: gridDims.y,
-      x0: colIdx * this._size + Griddler.PIXEL_ADJUST,
-      y0: rowIdx * this._size + Griddler.PIXEL_ADJUST,
+      ...dims,
+      x0: dims.x * this._size + Griddler.PIXEL_ADJUST,
+      y0: dims.y * this._size + Griddler.PIXEL_ADJUST,
       which: locator.which,
-      state: this.getState(gridDims)
+      state: this.getState(dims)
     };
   }
 
   private highlight(coords: GridContextPoint) {
     this.clearContext(this._hiContext);
     this._hiContext.fillStyle = Griddler.HILITE;
-    if (coords.x) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
-    if (coords.y) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
-    if (coords.x && coords.y) {
+    if (coords.x != null) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
+    if (coords.y != null) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
+    if (coords.x != null && coords.y != null) {
       this._hiContext.clearRect(coords.x0, coords.y0, this._size, this._size);
     }
   }

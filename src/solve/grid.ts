@@ -67,23 +67,23 @@ export class Grid {
   private constructor(width: number, height: number) {
     this.width = width;
     this.height = height;
-    this._rowLabelCache = Utils.fillArray(this.height, () => []);
-    this._columnLabelCache = Utils.fillArray(this.width, () => []);
+    this._rowLabelCache = Utils.FillArray(this.height, () => []);
+    this._columnLabelCache = Utils.FillArray(this.width, () => []);
     this._cellCache = this._columnLabelCache
-      .map(() => Utils.fillArray(this.height, () => CellState.Blank));
+      .map(() => Utils.FillArray(this.height, () => CellState.Blank));
   }
 
   public hint(): HintResult {
-    const allCols = Utils.fillArray(this.width, () => 0).map((x, i) => i);
-    const allRows = Utils.fillArray(this.height, () => 0).map((x, i) => i);
+    const allCols = Utils.FillArray(this.width, () => 0).map((x, i) => i);
+    const allRows = Utils.FillArray(this.height, () => 0).map((x, i) => i);
     const colsrows = this.solveSetsRecursively([allCols, allRows], true);
     return new HintResult(colsrows);
   }
 
   public solve(): SolveResult {
     const t0 = new Date().getTime();
-    const allCols = Utils.fillArray(this.width, () => 0).map((x, i) => i);
-    const allRows = Utils.fillArray(this.height, () => 0).map((x, i) => i);
+    const allCols = Utils.FillArray(this.width, () => 0).map((x, i) => i);
+    const allRows = Utils.FillArray(this.height, () => 0).map((x, i) => i);
     this.solveSetsRecursively([allCols, allRows]);
     const t1 = new Date().getTime();
     return new SolveResult(this.gridObject, this.solved, t1 - t0);

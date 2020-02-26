@@ -44,15 +44,15 @@ export abstract class XGrid {
   }
 
   public static WipeCells(plain: PlainGrid): void {
-    const emptyRow = Utils.fillArray(plain.columns.length, (): 0 => 0);
+    const emptyRow = Utils.FillArray(plain.columns.length, (): 0 => 0);
     plain.rows.forEach(r => r.cells = emptyRow.slice());
   }
   
   private static CreatePlain(columns: number, rows: number): PlainGrid {
-    const emptyRow = Utils.fillArray(columns, (): 0 => 0);
+    const emptyRow = Utils.FillArray(columns, (): 0 => 0);
     return {
-      columns: Utils.fillArray(columns, () => ({ labels: [] })),
-      rows: Utils.fillArray(rows, () => ({ labels: [], cells: emptyRow.slice() }))
+      columns: Utils.FillArray(columns, () => ({ labels: [] })),
+      rows: Utils.FillArray(rows, () => ({ labels: [], cells: emptyRow.slice() }))
     };
   }
 
@@ -74,7 +74,7 @@ export abstract class XGrid {
         r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
           const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
           const freq = parseInt(cur.substring(1)) || 1;
-          acc = acc.concat(Utils.fillArray(freq, () => numero));
+          acc = acc.concat(Utils.FillArray(freq, () => numero));
           return acc;
         }, []);
       }
