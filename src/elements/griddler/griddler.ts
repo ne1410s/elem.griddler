@@ -20,7 +20,9 @@ export class Griddler extends CustomElementBase {
   private static readonly MAJOR_COL = '#bbb';
   private static readonly LABEL_COL = '#000';
   private static readonly CELL_COL = '#000';
-  private static readonly HILITE = 'rgba(0, 0, 200, 0.4)';
+  private static readonly HILITE = 'rgba(0, 0, 255, .2)';
+  private static readonly HILITE_FILLING = 'rgba(0, 255, 0, .2)';
+  private static readonly HILITE_MARKING = 'rgba(255, 255, 0, .2)';
 
   private static readonly SIZE_MIN = 5 * Griddler.RESOLUTION;
   private static readonly SIZE_MAX = 50 * Griddler.RESOLUTION;
@@ -81,17 +83,21 @@ export class Griddler extends CustomElementBase {
     this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => {
       const moveCoords = this.getCoords(e);
       
-      // If not left-button-initiated (or else moving on initial-cell)
-      if (this._downCoords?.which !== 1 || (this._downCoords.x === moveCoords.x && this._downCoords.y === moveCoords.y)) {
+      if (this._downCoords?.which === 1) {
+        // If left-button-initiated dragging
+        this.highlight();
+      } else if (this._downCoords?.which !== 1 || (this._downCoords.x === moveCoords.x && this._downCoords.y === moveCoords.y)) {
+      // If not dragging (or not left-button-initiated) or else check for initial-cell
         this.highlight(moveCoords);
       }
       
       // If ripe for the paintin'
       if (this._downCoords?.x === moveCoords.x || this._downCoords?.y === moveCoords.y) {
         
-        // Left button drag on empty cells:
-        if (moveCoords.state === 0 && this._downCoords.which === 1) {
-          this.setState(moveCoords, 1);
+        // Left button drag on empty cells (when NOT initiated from a mark):
+        if (this._downCoords.which === 1 && moveCoords.state === 0) {
+          const state = this._downCoords.state === 2 ? 2 : 1;
+          this.setState(moveCoords, state);
         }
       }
     });
@@ -372,9 +378,20 @@ export class Griddler extends CustomElementBase {
     };
   }
 
-  private highlight(coords: GridContextPoint) {
+  private getShade(state: number): string {
+    switch (state) {
+      case -1: return Griddler.HILITE;
+      case 2: return Griddler.HILITE_MARKING;
+      default:
+        return Griddler.HILITE_FILLING;
+    }
+  } 
+
+  private highlight(coords?: GridContextPoint, active: boolean = false) {
     this.clearContext(this._hiContext);
-    this._hiContext.fillStyle = Griddler.HILITE;
+    const state = coords ? -1 : this._downCoords?.state ?? 1;
+    this._hiContext.fillStyle = this.getShade(state);
+    coords = coords ?? this._downCoords;
     if (coords.x != null) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
     if (coords.y != null) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
     if (coords.x != null && coords.y != null) {
