@@ -17,7 +17,7 @@ export class Griddler extends CustomElementBase {
   private static readonly XY_DEF = 5;
   private static readonly RESOLUTION = 2;
   private static readonly MINOR_COL = '#eee';
-  private static readonly MAJOR_COL = '#555';
+  private static readonly MAJOR_COL = '#bbb';
   private static readonly LABEL_COL = '#000';
   private static readonly CELL_COL = '#000';
   private static readonly HILITE = 'rgba(0, 0, 200, 0.4)';
@@ -275,12 +275,15 @@ export class Griddler extends CustomElementBase {
       if (celRef[point.x] !== state) {
         celRef[point.x] = state;
         this._gridContext.beginPath();
-        this.setCell(point.x, point.y, false);
+        this.setCell(point.x, point.y);
+        this._gridContext.fillStyle = '#fff';
+        this._gridContext.fill();
+        this._gridContext.beginPath();
         switch (state) {
-          case 1: this.setCell(point.x, point.y, true); break;
+          case 1: this.setCell(point.x, point.y); break;
           case 2: this.markCell(point.x, point.y); break;
         }
-
+        this._gridContext.fillStyle = Griddler.CELL_COL;
         this._gridContext.fill();
       }
     }
@@ -293,10 +296,9 @@ export class Griddler extends CustomElementBase {
     this._gridContext.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
   }
 
-  private setCell(ci: number, ri: number, doFill: boolean) {
+  private setCell(ci: number, ri: number) {
     const buffer = 2 * Griddler.PIXEL_ADJUST;
-    const method = doFill ? 'rect' : 'clearRect';
-    this._gridContext[method](
+    this._gridContext.rect(
       ci * this._size + buffer,
       ri * this._size + buffer,
       this._size - buffer,
@@ -341,7 +343,7 @@ export class Griddler extends CustomElementBase {
         .map((state, idx) => ({ state, idx }))
         .forEach(cell => {
           switch (cell.state) {
-            case 1: this.setCell(cell.idx, row.idx, true); break;
+            case 1: this.setCell(cell.idx, row.idx); break;
             case 2: this.markCell(cell.idx, row.idx); break;
           }
         })
@@ -376,7 +378,12 @@ export class Griddler extends CustomElementBase {
     if (coords.x != null) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
     if (coords.y != null) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
     if (coords.x != null && coords.y != null) {
-      this._hiContext.clearRect(coords.x0, coords.y0, this._size, this._size);
+      const buffer = 2 * Griddler.PIXEL_ADJUST;
+      this._hiContext.clearRect(
+        coords.x0 + buffer,
+        coords.y0 + buffer,
+        this._size - 2 * buffer,
+        this._size - 2 * buffer);
     }
   }
 }

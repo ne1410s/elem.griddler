@@ -8,21 +8,18 @@ export class Utils {
   }
 
   /** Pools multiple events, firing once per delay cycle. */
-  public static Throttle<E, T extends (event: E) => void>(func: T, delay = 200): T {
+  public static Throttle<T>(func: (arg: T) => void, delay = 200): (arg: T) => void {
 
-    return func
+    return func;
   }
 
   /** Pools multiple events, firing once after the delay period. */
-  public static Debounce<T>(func: (param: T) => void, delay = 200): () => void {
-
+  public static Debounce<T>(func: (arg: T) => void, delay = 200): (arg: T) => void {
     let timeout: NodeJS.Timeout;
-    return function () {
+    return function (arg) {
       clearTimeout(timeout);
-      const context = this, args = arguments;
-      timeout = setTimeout(function() {
-         func.call(context, args);
-      }, delay);
-    }
+      const that = this;
+      timeout = setTimeout(() => func.call(that, arg), delay);
+    };
   }
 }
