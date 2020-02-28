@@ -1,0 +1,26 @@
+{
+  "resolution": 2,
+  "gridSize": {
+    "min": 5,
+    "max": 1000,
+    "default": 5,
+    "step": 5
+  },
+  "cellSize": {
+    "min": 5,
+    "max": 50,
+    "default": 20,
+    "step": 1
+  },
+  "palette": {
+    "major": "#bbbbbbff",
+    "minor": "#eeeeeeff",
+    "label": "#000000ff",
+    "cells": "#000000ff"
+  },
+  "hilite": {
+    "default": "#0000ff33",
+    "filling": "#00ff0033",
+    "marking": "#ffff0033"
+  }
+}

@@ -2,6 +2,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
 import typescript from 'rollup-plugin-typescript2';
+import json from '@rollup/plugin-json';
 import url from '@rollup/plugin-url';
 import pkg from './package.json';
 
@@ -22,6 +23,7 @@ export default {
     commonjs(), // convert external modules to ES modules
     typescript(),
     terser({ include: '*.umd.min.js' }),
+    json(),
     url({ include: ['src/**/*.css', 'src/**/*.html'] })
   ]
 };

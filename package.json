@@ -36,6 +36,7 @@
   "homepage": "https://github.com/ne1410s/ne14.griddler#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-json": "^4.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "@rollup/plugin-typescript": "^3.0.0",
     "@rollup/plugin-url": "^4.0.2",

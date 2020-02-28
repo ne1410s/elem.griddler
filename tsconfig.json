@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "esnext",
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     "declaration": true,
     "noImplicitAny": true,
     "target": "es6",
