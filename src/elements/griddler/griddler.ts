@@ -120,21 +120,22 @@ export class Griddler extends CustomElementBase {
     this.root.querySelector('#btnRedo').addEventListener('click', () => this.gotoHistory(this._historyIndex + 1));
     this.root.querySelector('#btnUndo').addEventListener('click', () => {
       
-      // if (curr !== this._history[this._historyIndex]) {
-      //   console.log('undo is adding to history!');
-      // }
-
       if (this._historyIndex === this._history.length) {
         
         const curr = this.toString();
         if (curr !== this._history[this._historyIndex]) {
           console.log('undo is ading to hstry');
 
-          this._history.push(curr);
+          //this._history.splice(this._historyIndex);
+          this._history[this._historyIndex] = curr;
+          //this.addToHistory(curr);
         }
       }
 
-      this.gotoHistory(this._historyIndex - 1)
+      this.gotoHistory(this._historyIndex - 1);
+
+      console.log('hist len', this._history.length);
+
     });
   }
 
@@ -268,9 +269,8 @@ export class Griddler extends CustomElementBase {
   }
 
   private addToHistory(snapshot: string): void {
-    let removed = this._history.splice(this._historyIndex + 1);
-    console.log('spliced-out:', removed.length)
-
+    let removed = this._history.splice(this._historyIndex + 1).length;
+    console.log('spliced', removed);
     this._historyIndex = this._history.push(snapshot);
     this.historyChanged();
   }
@@ -279,8 +279,6 @@ export class Griddler extends CustomElementBase {
     const btnUndo = this.root.querySelector('#btnUndo') as HTMLInputElement;
     const btnRedo = this.root.querySelector('#btnRedo') as HTMLInputElement;
     btnUndo.disabled = this._historyIndex <= 0;
-
-    console.log('should i disable? idx n len:', this._historyIndex, this._history.length);
     btnRedo.disabled = this._historyIndex >= this._history.length - 1;
   }
 
