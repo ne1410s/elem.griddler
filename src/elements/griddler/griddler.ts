@@ -22,7 +22,7 @@ export class Griddler extends CustomElementBase {
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
   private _downCoords: GridContextPoint;
   private _history: string[] = [];
-  private _historyIndex = -1;
+  private _historyIndex: number = 0;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
@@ -110,14 +110,32 @@ export class Griddler extends CustomElementBase {
       this._downCoords = null;
       this.clearContext(this._hiContext);
     });
-
+    
+    this._gridCanvas.addEventListener('contextmenu', event => event.preventDefault());
     this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
     this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
     this.root.querySelector('#btnExport').addEventListener('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
     this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
     this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
+    this.root.querySelector('#btnRedo').addEventListener('click', () => this.gotoHistory(this._historyIndex + 1));
+    this.root.querySelector('#btnUndo').addEventListener('click', () => {
+      
+      // if (curr !== this._history[this._historyIndex]) {
+      //   console.log('undo is adding to history!');
+      // }
 
-    this._gridCanvas.addEventListener('contextmenu', event => event.preventDefault());
+      if (this._historyIndex === this._history.length) {
+        
+        const curr = this.toString();
+        if (curr !== this._history[this._historyIndex]) {
+          console.log('undo is ading to hstry');
+
+          this._history.push(curr);
+        }
+      }
+
+      this.gotoHistory(this._historyIndex - 1)
+    });
   }
 
   /**
@@ -132,8 +150,9 @@ export class Griddler extends CustomElementBase {
   /** Removes all cell data, leaving the labels intact. */
   clear() {
 
-    console.warn('TODO: Prevent unmeaningul changes from being tracked!');
-    this.addToHistory(this.toString());
+    if (this._grid.rows.some(r => r.cells && /[12]/.test(r.cells + ''))) {
+      this.addToHistory(this.toString());
+    }
 
     XGrid.WipeCells(this._grid);
     this.refresh();
@@ -249,15 +268,30 @@ export class Griddler extends CustomElementBase {
   }
 
   private addToHistory(snapshot: string): void {
-    this._history.push(snapshot);
+    let removed = this._history.splice(this._historyIndex + 1);
+    console.log('spliced-out:', removed.length)
+
+    this._historyIndex = this._history.push(snapshot);
     this.historyChanged();
   }
 
   private historyChanged(): void {
-    console.warn('TODO: Set button visibility according to items...', this._history.length);
+    const btnUndo = this.root.querySelector('#btnUndo') as HTMLInputElement;
+    const btnRedo = this.root.querySelector('#btnRedo') as HTMLInputElement;
+    btnUndo.disabled = this._historyIndex <= 0;
 
+    console.log('should i disable? idx n len:', this._historyIndex, this._history.length);
+    btnRedo.disabled = this._historyIndex >= this._history.length - 1;
+  }
 
-    (this.root.querySelector('#btnUndo') as HTMLInputElement).disabled = this._history.length === 0;
+  private gotoHistory(newIndex: number): void {
+    if (newIndex === this._historyIndex) return;
+    const snapshot = this._history[newIndex];
+    if (snapshot) {
+      this._historyIndex = newIndex;
+      this.load(JSON.parse(snapshot));
+      this.historyChanged();
+    }
   }
 
   private getState(point: Point): 0 | 1 | 2 {
