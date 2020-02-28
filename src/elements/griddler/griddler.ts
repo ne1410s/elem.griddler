@@ -21,6 +21,8 @@ export class Griddler extends CustomElementBase {
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
   private _downCoords: GridContextPoint;
+  private _history: string[] = [];
+  private _historyIndex = -1;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
@@ -77,14 +79,16 @@ export class Griddler extends CustomElementBase {
       }
     });
     this._gridCanvas.addEventListener('mousedown', event => {
-      this._downCoords = this.getCoords(event);
+      this._downCoords = this.getCoords(event, true);
       this.highlight();
     });
     this._gridCanvas.addEventListener('mouseup', event => {
-      this.highlight(this.getCoords(event));
+
       event.stopImmediatePropagation();
+      const upCoords = this.getCoords(event);
+      this.highlight(upCoords);
+
       if (this._downCoords) {
-        const upCoords = this.getCoords(event);
         if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
           let state: 0 | 1 | 2;
           switch (this._downCoords.which) {
@@ -93,6 +97,10 @@ export class Griddler extends CustomElementBase {
           }
 
           this.setState(this._downCoords, state);
+        }
+
+        if (this._downCoords.pending) {
+          this.addToHistory(this._downCoords.snapshot);
         }
 
         this._downCoords = null;
@@ -123,12 +131,20 @@ export class Griddler extends CustomElementBase {
 
   /** Removes all cell data, leaving the labels intact. */
   clear() {
+
+    console.warn('TODO: Prevent unmeaningul changes from being tracked!');
+    this.addToHistory(this.toString());
+
     XGrid.WipeCells(this._grid);
     this.refresh();
   }
 
   /** Attempts to solve the grid. */
   solve() {
+
+    console.warn('TODO: Prevent unmeaningul changes from being tracked!');
+    this.addToHistory(this.toString());
+
     const result = Grid.load(this._grid).solve();
     if (result.solved) {
       console.log('Solved in ' + result.solvedMs + 'ms');
@@ -232,6 +248,18 @@ export class Griddler extends CustomElementBase {
     return Math.max(min, Math.min(max, rnd));
   }
 
+  private addToHistory(snapshot: string): void {
+    this._history.push(snapshot);
+    this.historyChanged();
+  }
+
+  private historyChanged(): void {
+    console.warn('TODO: Set button visibility according to items...', this._history.length);
+
+
+    (this.root.querySelector('#btnUndo') as HTMLInputElement).disabled = this._history.length === 0;
+  }
+
   private getState(point: Point): 0 | 1 | 2 {
     return point.x == null || point.y == null ? null
       : this._grid.rows[point.y].cells[point.x];
@@ -253,6 +281,10 @@ export class Griddler extends CustomElementBase {
         }
         this._gridContext.fillStyle = config.palette.cells;
         this._gridContext.fill();
+
+        if (this._downCoords?.snapshot) {
+          this._downCoords.pending = true;
+        }
       }
     }
   }
@@ -324,7 +356,7 @@ export class Griddler extends CustomElementBase {
     context.clearRect(0, 0, this.totalWidth, this.totalHeight);
   }
 
-  private getCoords(locator: { offsetX: number, offsetY: number, which: number }): GridContextPoint {
+  private getCoords(locator: { offsetX: number, offsetY: number, which: number }, snapshot = false): GridContextPoint {
     const ci = Griddler.Round(locator.offsetX * config.resolution / this._size, 0, 1, 0, this.totalColumns);
     const ri = Griddler.Round(locator.offsetY * config.resolution / this._size, 0, 1, 0, this.totalRows);
     const dims = {
@@ -336,7 +368,8 @@ export class Griddler extends CustomElementBase {
       x0: dims.x * this._size + Griddler.PIXEL_OFFSET,
       y0: dims.y * this._size + Griddler.PIXEL_OFFSET,
       which: locator.which === 1 ? 'left' : 'right',
-      state: this.getState(dims)
+      state: this.getState(dims),
+      snapshot: snapshot ? this.toString() : null,
     };
   }
 
@@ -377,4 +410,6 @@ interface GridContextPoint extends Point {
   y0: number;
   which: 'left' | 'right';
   state: 0 | 1 | 2;
+  snapshot: string;
+  pending?: boolean;
 }
