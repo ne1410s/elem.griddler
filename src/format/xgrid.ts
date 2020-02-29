@@ -25,13 +25,21 @@ export abstract class XGrid {
       }
       const data = ds.cells.reduce((acc, cur, i) => {
         const symbol = cur === 2 ? 'm' : cur === 1 ? 'f' : 'e';
-        if (!acc.symbol) { acc.symbol = symbol };
+        const isLast = i === ds.cells.length - 1;
+        
+        if (!acc.symbol) { acc.symbol = symbol; acc.count = 0; };
         if (acc.symbol === symbol) { acc.count++; }
-        if (acc.count !== 0 && (acc.symbol !== symbol || i === plain.rows.length - 1)) {
-          acc.items.push(`${acc.symbol}${acc.count === 1 ? '' : acc.count}`);
-          acc.symbol = symbol;
-          acc.count = 1;
+        if (acc.count !== 0 && (acc.symbol !== symbol || isLast)) {
+          if (acc.symbol !== symbol) {
+            acc.items.push(`${acc.symbol}${acc.count === 1 ? '' : acc.count}`);
+            acc.count = 1;
+            acc.symbol = symbol;
+          }
+          if (isLast) {
+            acc.items.push(`${acc.symbol}${acc.count === 1 ? '' : acc.count}`);
+          }
         }
+
         return acc;
       }, { symbol: '', count: 0, items: [] as string[] }).items.join('');
       return data ? `.${data}` : '';
@@ -57,6 +65,7 @@ export abstract class XGrid {
   }
 
   private static ToPlain(dense: DenseGrid): PlainGrid {
+    
     const cols = dense.c.split('|');
     const rows = dense.r.split('|');
     const retVal = XGrid.CreatePlain(cols.length, rows.length);
@@ -70,14 +79,12 @@ export abstract class XGrid {
       const dataArray = rows[i].split('.');
       const labels = dataArray.map(l => parseInt(l)).filter(n => !isNaN(n));
       r.labels = labels.length > 0 ? labels : [];
-      if (dataArray.length === 1 + labels.length) {
-        r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
-          const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
-          const freq = parseInt(cur.substring(1)) || 1;
-          acc = acc.concat(Utils.FillArray(freq, () => numero));
-          return acc;
-        }, []);
-      }
+      r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
+        const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
+        const freq = cur ? (parseInt(cur.substring(1)) || 1) : cols.length;
+        acc = acc.concat(Utils.FillArray(freq, () => numero));
+        return acc;
+      }, []); 
     });
 
     return retVal;
