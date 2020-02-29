@@ -53,8 +53,8 @@ export class Griddler extends CustomElementBase {
   }
 
   constructor() {
-
     super(stylesUrl, markupUrl);
+
     this._gridCanvas = this.root.querySelector('canvas#grid');
     this._gridContext = this._gridCanvas.getContext('2d');
     this._gridContext.imageSmoothingEnabled = false;
