@@ -118,25 +118,7 @@ export class Griddler extends CustomElementBase {
     this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
     this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
     this.root.querySelector('#btnRedo').addEventListener('click', () => this.gotoHistory(this._historyIndex + 1));
-    this.root.querySelector('#btnUndo').addEventListener('click', () => {
-      
-      if (this._historyIndex === this._history.length) {
-        
-        const curr = this.toString();
-        if (curr !== this._history[this._historyIndex]) {
-          console.log('undo is ading to hstry');
-
-          //this._history.splice(this._historyIndex);
-          this._history[this._historyIndex] = curr;
-          //this.addToHistory(curr);
-        }
-      }
-
-      this.gotoHistory(this._historyIndex - 1);
-
-      console.log('hist len', this._history.length);
-
-    });
+    this.root.querySelector('#btnUndo').addEventListener('click', () => this.undoOne());
   }
 
   /**
@@ -269,8 +251,7 @@ export class Griddler extends CustomElementBase {
   }
 
   private addToHistory(snapshot: string): void {
-    let removed = this._history.splice(this._historyIndex + 1).length;
-    console.log('spliced', removed);
+    this._history.splice(this._historyIndex);
     this._historyIndex = this._history.push(snapshot);
     this.historyChanged();
   }
@@ -290,6 +271,18 @@ export class Griddler extends CustomElementBase {
       this.load(JSON.parse(snapshot));
       this.historyChanged();
     }
+  }
+
+  private undoOne(): void {
+    if (this._historyIndex === this._history.length) {  
+      const curr = this.toString();
+      if (curr !== this._history[this._historyIndex]) {
+        this.addToHistory(curr);
+        this._historyIndex--;
+      }
+    }
+
+    this.gotoHistory(this._historyIndex - 1);
   }
 
   private getState(point: Point): 0 | 1 | 2 {
