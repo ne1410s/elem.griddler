@@ -39,6 +39,14 @@ export class Griddler extends CustomElementBase {
     this._hiCanvas.height = value;
   }
 
+  get isBlank(): boolean {
+    return !this._grid.rows.some(r => r.cells && /[12]/.test(r.cells + ''));
+  }
+
+  get isFull(): boolean {
+    return this._grid.rows.every(r => /^[12,]+$/.test(r.cells + ''));
+  }
+
   public toString(): string {
     return JSON.stringify(XGrid.ToDense(this._grid));
   }
@@ -132,25 +140,22 @@ export class Griddler extends CustomElementBase {
 
   /** Removes all cell data, leaving the labels intact. */
   clear() {
-
-    if (this._grid.rows.some(r => r.cells && /[12]/.test(r.cells + ''))) {
-      this.addToHistory(this.toString());
+    if (!this.isBlank) {
+      this.addToHistory(this.toString()); 
+      XGrid.WipeCells(this._grid);
+      this.refresh();
     }
-
-    XGrid.WipeCells(this._grid);
-    this.refresh();
   }
 
   /** Attempts to solve the grid. */
   solve() {
-
-    console.warn('TODO: Prevent unmeaningul changes from being tracked!');
-    this.addToHistory(this.toString());
-
-    const result = Grid.load(this._grid).solve();
-    if (result.solved) {
-      console.log('Solved in ' + result.solvedMs + 'ms');
-      this.load(result.grid);
+    if (!this.isFull) {
+      const result = Grid.load(this._grid).solve();
+      if (result.solved) {
+        console.log('Solved in ' + result.solvedMs + 'ms');
+        this.addToHistory(this.toString());
+        this.load(result.grid);
+      }
     }
   }
 
