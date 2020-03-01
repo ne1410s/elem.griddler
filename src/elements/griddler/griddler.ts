@@ -120,13 +120,21 @@ export class Griddler extends CustomElementBase {
     });
     
     this._gridCanvas.addEventListener('contextmenu', event => event.preventDefault());
-    this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
-    this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
-    this.root.querySelector('#btnExport').addEventListener('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
-    this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
-    this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
     this.root.querySelector('#btnRedo').addEventListener('click', () => this.gotoHistory(this._historyIndex + 1));
     this.root.querySelector('#btnUndo').addEventListener('click', () => this.undoOne());
+    this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
+    this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
+    this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
+    this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
+    this.root.querySelector('#btnExport').addEventListener('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
+    this.root.querySelector('#btnImport input').addEventListener('change', event => {
+      this.read((event.target as HTMLInputElement).files[0]);
+    });
+    this.root.querySelector('.drop-zone').addEventListener('dragover', event => event.preventDefault());
+    this.root.querySelector('.drop-zone').addEventListener('drop', (event: DragEvent) => {
+      event.preventDefault();
+      this.read(event.dataTransfer.files[0]);
+    })
   }
 
   /**
@@ -253,6 +261,20 @@ export class Griddler extends CustomElementBase {
     val = parseInt(`${val}`)
     const rnd = to * Math.round((isNaN(val) ? def : val) / to);
     return Math.max(min, Math.min(max, rnd));
+  }
+
+  private read(file: File) {
+    if (file == null) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const current = this.toString();
+      const loaded = e.target.result as string;
+      if (loaded !== current) {
+        this.load(JSON.parse(loaded));
+        this.addToHistory(current);
+      }
+    }
+    reader.readAsText(file);
   }
 
   private addToHistory(snapshot: string): void {

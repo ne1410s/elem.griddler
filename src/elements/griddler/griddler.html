@@ -1,13 +1,19 @@
 <div class="control-zone">
-  <input id="btnSolve" type="button" value="solve"/>
-  <input id="btnClear" type="button" value="clear"/>
-  <input id="btnExport" type="button" value="export"/>
-  <input id="btnDownload" type="button" value="download"/>
-  <input id="btnPrint" type="button" value="print"/>
   <input id="btnUndo" type="button" value="&#x25c4;" disabled title="undo"/>
   <input id="btnRedo" type="button" value="&#x25ba;" disabled title="redo"/>
+  <input id="btnClear" type="button" value="clear"/>
+  <input id="btnSolve" type="button" value="solve"/>
+  <input id="btnDownload" type="button" value="download"/>
+  <input id="btnPrint" type="button" value="print"/>
+  <input id="btnExport" type="button" value="export"/>
+  <button>
+    <label id="btnImport">
+      <span>import</span>
+      <input type="file" accept=".grid,.json, application/json"/>
+    </label>
+  </button>
 </div>
-<div class="grid-zone">
+<div class="grid-zone drop-zone">
   <canvas id="grid"></canvas>
   <canvas id="hilite"></canvas>
 </div>

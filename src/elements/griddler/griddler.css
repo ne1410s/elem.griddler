@@ -1,8 +1,7 @@
 .grid-zone { position: relative; }
 
-input:disabled {
-  opacity: .4;
-}
+#btnImport input { display: none; }
+input:disabled { opacity: .4; }
 
 canvas { width: 100%; }
 canvas#hilite {
