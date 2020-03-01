@@ -79,12 +79,14 @@ export abstract class XGrid {
       const dataArray = rows[i].split('.');
       const labels = dataArray.map(l => parseInt(l)).filter(n => !isNaN(n));
       r.labels = labels.length > 0 ? labels : [];
-      r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
-        const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
-        const freq = cur ? (parseInt(cur.substring(1)) || 1) : cols.length;
-        acc = acc.concat(Utils.FillArray(freq, () => numero));
-        return acc;
-      }, []); 
+      if (labels.length === 0 || dataArray.length === labels.length + 1) {
+        r.cells = dataArray.pop().split(/(?=[mfe]\d*)/).reduce((acc, cur) => {
+          const numero = cur[0] === 'm' ? 2 : cur[0] === 'f' ? 1 : 0;
+          const freq = cur ? (parseInt(cur.substring(1)) || 1) : cols.length;
+          acc = acc.concat(Utils.FillArray(freq, () => numero));
+          return acc;
+        }, []); 
+      }
     });
 
     return retVal;
