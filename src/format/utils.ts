@@ -9,8 +9,18 @@ export class Utils {
 
   /** Pools multiple events, firing once per delay cycle. */
   public static Throttle<T>(func: (arg: T) => void, delay = 200): (arg: T) => void {
-
-    return func;
+    let active: boolean;
+    return function (args) {
+      if (!active) {
+        if (active == null) func.call(this, args);
+        active = true;
+        const that = this;
+        setTimeout(() => { 
+          active = !!func.call(that, args);
+          setTimeout(() => active = active || null, delay / 10);
+        }, delay);
+      }
+    };
   }
 
   /** Pools multiple events, firing once after the delay period. */
