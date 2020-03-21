@@ -1,4 +1,5 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
+import { Popup } from '@ne1410s/popup';
 import { PlainGrid } from '../../format/plain-grid';
 import { Grid } from '../../solve/grid';
 import { XGrid } from '../../format/xgrid';
@@ -23,6 +24,7 @@ export class Griddler extends CustomElementBase {
   private _downCoords: GridContextPoint;
   private _history: string[] = [];
   private _historyIndex: number = 0;
+  private _popup: Popup;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
@@ -98,13 +100,17 @@ export class Griddler extends CustomElementBase {
 
       if (this._downCoords) {
         if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
-          let state: 0 | 1 | 2;
-          switch (this._downCoords.which) {
-            case 'left': state = (this._downCoords.state + 1) % 3 as 0 | 1 | 2; break;
-            case 'right': state = this._downCoords.state === 2 ? 0 : 2; break;
-          }
+          if (upCoords.x != null && upCoords.y != null) { // cell
+            let state: 0 | 1 | 2;
+            switch (this._downCoords.which) {
+              case 'left': state = (this._downCoords.state + 1) % 3 as 0 | 1 | 2; break;
+              case 'right': state = this._downCoords.state === 2 ? 0 : 2; break;
+            }
 
-          this.setState(this._downCoords, state);
+            this.setState(this._downCoords, state);
+          }
+          else if (upCoords.x != null) this.showLabelModal('column', upCoords.x);
+          else if (upCoords.y != null) this.showLabelModal('row', upCoords.y);
         }
 
         if (this._downCoords.pending) {
@@ -134,7 +140,18 @@ export class Griddler extends CustomElementBase {
     this.root.querySelector('.drop-zone').addEventListener('drop', (event: DragEvent) => {
       event.preventDefault();
       this.read(event.dataTransfer.files[0]);
-    })
+    });
+
+    
+
+    const p = document.createElement('p');
+    p.innerText = 'ddsdda';
+    
+    this._popup = new Popup();
+    this._popup.setAttribute('move', '');
+    this._popup.setAttribute('resize', '');
+    this._popup.appendChild(p);
+    this.root.appendChild(this._popup);
   }
 
   /**
@@ -449,6 +466,12 @@ export class Griddler extends CustomElementBase {
         this._size - 2 * buffer,
         this._size - 2 * buffer);
     }
+  }
+
+  private showLabelModal(type: 'column' | 'row', index: number) {
+    
+    console.log(type, index);
+    this._popup.open();
   }
 }
 

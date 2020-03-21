@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@ne1410s/cust-elems": "0.0.5",
-    "@ne1410s/dom": "^0.1.2"
+    "@ne1410s/dom": "^0.1.2",
+    "@ne1410s/popup": "0.0.3"
   }
 }
