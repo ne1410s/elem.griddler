@@ -154,6 +154,7 @@ export class Griddler extends CustomElementBase {
 
     this._editLabelPopup = new EditLabelPopup();
     this.$root.append(this._editLabelPopup);
+    q(this._editLabelPopup).on('confirm', () => this.receiveLabelUpdate());
   }
 
   /**
@@ -471,12 +472,19 @@ export class Griddler extends CustomElementBase {
   }
 
   private showLabelModal(type: 'columns' | 'rows', index: number) {
-    
-    const title = `${type == 'columns' ? 'Column' : 'Row'} ${index + 1}`;
-    const labels = this._grid[type][index].labels;
-    this._editLabelPopup.title = title;
-    this._editLabelPopup.labels = labels;
+    this._editLabelPopup.setType = type;
+    this._editLabelPopup.setIndex = index;
+    this._editLabelPopup.capacity = this._grid[type === 'rows' ? 'columns' : 'rows'].length;
+    this._editLabelPopup.labels = this._grid[type][index].labels;
     this._editLabelPopup.open();
+  }
+
+  private receiveLabelUpdate() {
+    const type = this._editLabelPopup.setType;
+    const index = this._editLabelPopup.setIndex;
+    this._grid[type][index].labels = this._editLabelPopup.labels;
+
+    console.log('TODO: Redraw labels:', this._editLabelPopup.labels);
   }
 }
 
