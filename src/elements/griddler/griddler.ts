@@ -1,9 +1,12 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
-import { Popup } from '@ne1410s/popup';
+import { q, ChainedQuery } from '@ne1410s/dom';
+
 import { PlainGrid } from '../../format/plain-grid';
 import { Grid } from '../../solve/grid';
 import { XGrid } from '../../format/xgrid';
 import { DenseGrid } from '../../format/dense-grid';
+import { EditLabelPopup } from '../popups/edit-label/edit-label';
+
 import * as config from './config.json';
 import markupUrl from './griddler.html';
 import stylesUrl from './griddler.css';
@@ -14,31 +17,33 @@ export class Griddler extends CustomElementBase {
 
   private static readonly PIXEL_OFFSET = config.resolution / 2;
   
-  private readonly _gridCanvas: HTMLCanvasElement;
-  private readonly _gridContext: CanvasRenderingContext2D;
-  private readonly _hiCanvas: HTMLCanvasElement;
-  private readonly _hiContext: CanvasRenderingContext2D;
+  private readonly $root: ChainedQuery;
+  private readonly $grid: ChainedQuery;
+  private readonly $lite: ChainedQuery;
+  
+  private readonly _ctxGrid: CanvasRenderingContext2D;
+  private readonly _ctxLite: CanvasRenderingContext2D;
 
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
   private _downCoords: GridContextPoint;
   private _history: string[] = [];
   private _historyIndex: number = 0;
-  private _popup: Popup;
+  private _editLabelPopup: EditLabelPopup;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
 
-  get totalWidth(): number { return this._gridCanvas.width; }
+  get totalWidth(): number { return (this.$grid.elements[0] as HTMLCanvasElement).width; }
   set totalWidth(value: number) {
-    this._gridCanvas.width = value;
-    this._hiCanvas.width = value;
+    this.$grid.prop('width', value);
+    this.$lite.prop('width', value);
   }
 
-  get totalHeight(): number { return this._gridCanvas.height; }
+  get totalHeight(): number { return (this.$grid.elements[0] as HTMLCanvasElement).height; }
   set totalHeight(value: number) {
-    this._gridCanvas.height = value;
-    this._hiCanvas.height = value;
+    this.$grid.prop('height', value);
+    this.$lite.prop('height', value);
   }
 
   get isBlank(): boolean {
@@ -59,23 +64,26 @@ export class Griddler extends CustomElementBase {
   }
 
   get imageDataUrl(): string {
-    return this._gridCanvas.toDataURL();
+    return (this.$grid.get(0) as HTMLCanvasElement).toDataURL();
   }
 
   constructor() {
     super(stylesUrl, markupUrl);
 
-    this._gridCanvas = this.root.querySelector('canvas#grid');
-    this._gridContext = this._gridCanvas.getContext('2d');
-    this._gridContext.imageSmoothingEnabled = false;
-    this._hiCanvas = this.root.querySelector('canvas#hilite');
-    this._hiContext = this._hiCanvas.getContext('2d');
-    this._hiContext.imageSmoothingEnabled = false;
+    this.$root = q(this.root);
 
-    this._gridCanvas.addEventListener('mouseleave', () => { 
-      if (!this._downCoords) this.clearContext(this._hiContext);
+    this.$grid = this.$root.first('canvas#grid');
+    this._ctxGrid = (this.$grid.get(0) as HTMLCanvasElement).getContext('2d');
+    this._ctxGrid.imageSmoothingEnabled = false;
+
+    this.$lite = this.$root.first('canvas#hilite');
+    this._ctxLite = (this.$lite.get(0) as HTMLCanvasElement).getContext('2d');
+    this._ctxLite.imageSmoothingEnabled = false;
+
+    this.$grid.on('mouseleave', () => { 
+      if (!this._downCoords) this.clearContext(this._ctxLite);
     });
-    this._gridCanvas.addEventListener('mousemove', (e: MouseEvent) => {
+    this.$grid.on('mousemove', (e: MouseEvent) => {
       const moveCoords = this.getCoords(e);
       
       // Check for dragging on initial-cell
@@ -88,14 +96,14 @@ export class Griddler extends CustomElementBase {
         this.setState(moveCoords, this._downCoords.which === 'left' ? 1 : 2);
       }
     });
-    this._gridCanvas.addEventListener('mousedown', event => {
-      this._downCoords = this.getCoords(event, true);
+    this.$grid.on('mousedown', (e: MouseEvent) => {
+      this._downCoords = this.getCoords(e, true);
       this.highlight();
     });
-    this._gridCanvas.addEventListener('mouseup', event => {
+    this.$grid.on('mouseup', (e: MouseEvent) => {
 
-      event.stopImmediatePropagation();
-      const upCoords = this.getCoords(event);
+      e.stopImmediatePropagation();
+      const upCoords = this.getCoords(e);
       this.highlight(upCoords);
 
       if (this._downCoords) {
@@ -109,8 +117,8 @@ export class Griddler extends CustomElementBase {
 
             this.setState(this._downCoords, state);
           }
-          else if (upCoords.x != null) this.showLabelModal('column', upCoords.x);
-          else if (upCoords.y != null) this.showLabelModal('row', upCoords.y);
+          else if (upCoords.x != null) this.showLabelModal('columns', upCoords.x);
+          else if (upCoords.y != null) this.showLabelModal('rows', upCoords.y);
         }
 
         if (this._downCoords.pending) {
@@ -120,38 +128,32 @@ export class Griddler extends CustomElementBase {
         this._downCoords = null;
       }
     });
-    window.addEventListener('mouseup', () => {
+
+    q(window).on('mouseup', () => {
       this._downCoords = null;
-      this.clearContext(this._hiContext);
+      this.clearContext(this._ctxLite);
     });
     
-    this._gridCanvas.addEventListener('contextmenu', event => event.preventDefault());
-    this.root.querySelector('#btnRedo').addEventListener('click', () => this.gotoHistory(this._historyIndex + 1));
-    this.root.querySelector('#btnUndo').addEventListener('click', () => this.undoOne());
-    this.root.querySelector('#btnClear').addEventListener('click', () => this.clear());
-    this.root.querySelector('#btnSolve').addEventListener('click', () => this.solve());
-    this.root.querySelector('#btnDownload').addEventListener('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
-    this.root.querySelector('#btnPrint').addEventListener('click', () => window.print());
-    this.root.querySelector('#btnExport').addEventListener('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
-    this.root.querySelector('#btnImport input').addEventListener('change', event => {
+    this.$grid.on('contextmenu', event => event.preventDefault());
+
+    this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
+    this.$root.find('#btnUndo').on('click', () => this.undoOne());
+    this.$root.find('#btnClear').on('click', () => this.clear());
+    this.$root.find('#btnSolve').on('click', () => this.solve());
+    this.$root.find('#btnDownload').on('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
+    this.$root.find('#btnPrint').on('click', () => window.print());
+    this.$root.find('#btnExport').on('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
+    this.$root.find('#btnImport input').on('change', event => {
       this.read((event.target as HTMLInputElement).files[0]);
     });
-    this.root.querySelector('.drop-zone').addEventListener('dragover', event => event.preventDefault());
-    this.root.querySelector('.drop-zone').addEventListener('drop', (event: DragEvent) => {
+    this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
+    this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
       this.read(event.dataTransfer.files[0]);
     });
 
-    
-
-    const p = document.createElement('p');
-    p.innerText = 'ddsdda';
-    
-    this._popup = new Popup();
-    this._popup.setAttribute('move', '');
-    this._popup.setAttribute('resize', '');
-    this._popup.appendChild(p);
-    this.root.appendChild(this._popup);
+    this._editLabelPopup = new EditLabelPopup();
+    this.$root.append(this._editLabelPopup);
   }
 
   /**
@@ -198,36 +200,36 @@ export class Griddler extends CustomElementBase {
     const client_w = this.totalWidth / config.resolution;
     this.root.querySelector('.grid-zone').setAttribute('style', `width: ${client_w}px`);
 
-    this.clearContext(this._gridContext);
-    this._gridContext.fillStyle = '#fff';
-    this._gridContext.fillRect(0, 0, this.totalWidth, this.totalHeight);
-    this._gridContext.beginPath();
+    this.clearContext(this._ctxGrid);
+    this._ctxGrid.fillStyle = '#fff';
+    this._ctxGrid.fillRect(0, 0, this.totalWidth, this.totalHeight);
+    this._ctxGrid.beginPath();
     for (let c = 0; c <= this.totalColumns; c++) {
-      this._gridContext.moveTo(c * this._size + Griddler.PIXEL_OFFSET, 0);
-      this._gridContext.lineTo(c * this._size + Griddler.PIXEL_OFFSET, grid_h);
+      this._ctxGrid.moveTo(c * this._size + Griddler.PIXEL_OFFSET, 0);
+      this._ctxGrid.lineTo(c * this._size + Griddler.PIXEL_OFFSET, grid_h);
     }
     for (let r = 0; r <= this.totalRows; r++) {
-      this._gridContext.moveTo(0, r * this._size + Griddler.PIXEL_OFFSET);
-      this._gridContext.lineTo(grid_w, r * this._size + Griddler.PIXEL_OFFSET);
+      this._ctxGrid.moveTo(0, r * this._size + Griddler.PIXEL_OFFSET);
+      this._ctxGrid.lineTo(grid_w, r * this._size + Griddler.PIXEL_OFFSET);
     }
-    this._gridContext.strokeStyle = config.palette.minor;
-    this._gridContext.lineWidth = config.resolution;
-    this._gridContext.stroke();    
-    this._gridContext.closePath();
+    this._ctxGrid.strokeStyle = config.palette.minor;
+    this._ctxGrid.lineWidth = config.resolution;
+    this._ctxGrid.stroke();    
+    this._ctxGrid.closePath();
 
-    this._gridContext.beginPath();
+    this._ctxGrid.beginPath();
     for (let c = 0; c <= this.totalColumns; c += config.gridSize.step) {
-      this._gridContext.moveTo(c * this._size + Griddler.PIXEL_OFFSET, 0);
-      this._gridContext.lineTo(c * this._size + Griddler.PIXEL_OFFSET, grid_h);
+      this._ctxGrid.moveTo(c * this._size + Griddler.PIXEL_OFFSET, 0);
+      this._ctxGrid.lineTo(c * this._size + Griddler.PIXEL_OFFSET, grid_h);
     }
     for (let r = 0; r <= this.totalRows; r += config.gridSize.step) {
-      this._gridContext.moveTo(0, r * this._size + Griddler.PIXEL_OFFSET);
-      this._gridContext.lineTo(grid_w, r * this._size + Griddler.PIXEL_OFFSET);
+      this._ctxGrid.moveTo(0, r * this._size + Griddler.PIXEL_OFFSET);
+      this._ctxGrid.lineTo(grid_w, r * this._size + Griddler.PIXEL_OFFSET);
     }
-    this._gridContext.strokeStyle = config.palette.major;
-    this._gridContext.lineWidth = config.resolution;
-    this._gridContext.stroke();    
-    this._gridContext.closePath();
+    this._ctxGrid.strokeStyle = config.palette.major;
+    this._ctxGrid.lineWidth = config.resolution;
+    this._ctxGrid.stroke();    
+    this._ctxGrid.closePath();
     
     this.populate();
   }
@@ -339,17 +341,17 @@ export class Griddler extends CustomElementBase {
       const celRef = this._grid.rows[point.y].cells;
       if (celRef[point.x] !== state) {
         celRef[point.x] = state;
-        this._gridContext.beginPath();
+        this._ctxGrid.beginPath();
         this.setCell(point.x, point.y);
-        this._gridContext.fillStyle = '#fff';
-        this._gridContext.fill();
-        this._gridContext.beginPath();
+        this._ctxGrid.fillStyle = '#fff';
+        this._ctxGrid.fill();
+        this._ctxGrid.beginPath();
         switch (state) {
           case 1: this.setCell(point.x, point.y); break;
           case 2: this.markCell(point.x, point.y); break;
         }
-        this._gridContext.fillStyle = config.palette.cells;
-        this._gridContext.fill();
+        this._ctxGrid.fillStyle = config.palette.cells;
+        this._ctxGrid.fill();
 
         if (this._downCoords?.snapshot) {
           this._downCoords.pending = true;
@@ -361,13 +363,13 @@ export class Griddler extends CustomElementBase {
   private markCell(ci: number, ri: number) {
     const x0 = ci * this._size + Griddler.PIXEL_OFFSET + (this._size / 2);
     const y0 = ri * this._size + Griddler.PIXEL_OFFSET + (this._size / 2);
-    this._gridContext.moveTo(x0, y0);
-    this._gridContext.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
+    this._ctxGrid.moveTo(x0, y0);
+    this._ctxGrid.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
   }
 
   private setCell(ci: number, ri: number) {
     const buffer = 2 * Griddler.PIXEL_OFFSET;
-    this._gridContext.rect(
+    this._ctxGrid.rect(
       ci * this._size + buffer,
       ri * this._size + buffer,
       this._size - buffer,
@@ -380,32 +382,32 @@ export class Griddler extends CustomElementBase {
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
     const font_size = this._size * .55;
-    this._gridContext.font = `${font_size}px Times New Roman`;
-    this._gridContext.fillStyle = config.palette.label;
+    this._ctxGrid.font = `${font_size}px Times New Roman`;
+    this._ctxGrid.fillStyle = config.palette.label;
 
-    this._gridContext.textAlign = 'left';
+    this._ctxGrid.textAlign = 'left';
     this._grid.rows
       .map((row, idx) => ({ labels: row.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)
       .forEach(set => {
         const x = grid_w + (font_size / 2);
         const y = set.idx * this._size + (this._size / 2) + (font_size / 2);
-        this._gridContext.fillText(set.labels.join(' . '), x, y);
+        this._ctxGrid.fillText(set.labels.join(' . '), x, y);
       });
 
-    this._gridContext.textAlign = 'center';
+    this._ctxGrid.textAlign = 'center';
     this._grid.columns
       .map((col, idx) => ({ labels: col.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)
       .forEach(set => {
         const x = set.idx * this._size + (this._size / 2) + 2;
         set.labels.forEach((label, idx) => {
-          this._gridContext.fillText(label + '', x, grid_h + ((font_size * 1.2) * (idx + 1.2)));
+          this._ctxGrid.fillText(label + '', x, grid_h + ((font_size * 1.2) * (idx + 1.2)));
         });
       });
 
     // cell states
-    this._gridContext.beginPath();
+    this._ctxGrid.beginPath();
     this._grid.rows
       .map((row, idx) => ({ cells: row.cells, idx }))
       .forEach(row => (row.cells || [])
@@ -417,8 +419,8 @@ export class Griddler extends CustomElementBase {
           }
         })
       );
-    this._gridContext.fillStyle = config.palette.cells;
-    this._gridContext.fill();
+    this._ctxGrid.fillStyle = config.palette.cells;
+    this._ctxGrid.fill();
   }
 
   private clearContext(context: CanvasRenderingContext2D) {
@@ -452,15 +454,15 @@ export class Griddler extends CustomElementBase {
   } 
 
   private highlight(coords?: GridContextPoint) {
-    this.clearContext(this._hiContext);
+    this.clearContext(this._ctxLite);
     const state = coords ? -1 : this._downCoords?.which === 'left' ? 1 : 2;
-    this._hiContext.fillStyle = this.getShade(state);
+    this._ctxLite.fillStyle = this.getShade(state);
     coords = coords ?? this._downCoords;
-    if (coords.x != null) this._hiContext.fillRect(coords.x0, 0, this._size, this.totalHeight);
-    if (coords.y != null) this._hiContext.fillRect(0, coords.y0, this.totalWidth, this._size);
+    if (coords.x != null) this._ctxLite.fillRect(coords.x0, 0, this._size, this.totalHeight);
+    if (coords.y != null) this._ctxLite.fillRect(0, coords.y0, this.totalWidth, this._size);
     if (coords.x != null && coords.y != null) {
       const buffer = 2 * Griddler.PIXEL_OFFSET;
-      this._hiContext.clearRect(
+      this._ctxLite.clearRect(
         coords.x0 + buffer,
         coords.y0 + buffer,
         this._size - 2 * buffer,
@@ -468,10 +470,13 @@ export class Griddler extends CustomElementBase {
     }
   }
 
-  private showLabelModal(type: 'column' | 'row', index: number) {
+  private showLabelModal(type: 'columns' | 'rows', index: number) {
     
-    console.log(type, index);
-    this._popup.open();
+    const title = `${type == 'columns' ? 'Column' : 'Row'} ${index + 1}`;
+    const labels = this._grid[type][index].labels;
+    this._editLabelPopup.title = title;
+    this._editLabelPopup.labels = labels;
+    this._editLabelPopup.open();
   }
 }
 
