@@ -18,3 +18,12 @@
   text-align: right;
   margin: .2em;
 }
+
+#errors {
+  color: #f00;
+  font-size: .8em;
+}
+
+#btnSave:disabled {
+  opacity: 0.3;
+}

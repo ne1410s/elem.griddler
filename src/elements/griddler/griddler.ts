@@ -30,6 +30,7 @@ export class Griddler extends CustomElementBase {
   private _history: string[] = [];
   private _historyIndex: number = 0;
   private _editLabelPopup: EditLabelPopup;
+  private _fontSize = this._size * .55;
 
   get totalColumns(): number { return this._grid.columns.length; }
   get totalRows(): number { return this._grid.rows.length; }
@@ -153,8 +154,10 @@ export class Griddler extends CustomElementBase {
     });
 
     this._editLabelPopup = new EditLabelPopup();
-    this.$root.append(this._editLabelPopup);
-    q(this._editLabelPopup).on('confirm', () => this.receiveLabelUpdate());
+    this.$root
+      .append(this._editLabelPopup)
+      .find('ne14-pop-edit-label')
+      .on('confirmaccept', () => this.receiveLabelUpdate());
   }
 
   /**
@@ -380,32 +383,20 @@ export class Griddler extends CustomElementBase {
   private populate() {
 
     // labels
+    this._ctxGrid.font = `${this._fontSize}px Times New Roman`;
+    this._ctxGrid.fillStyle = config.palette.label;
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
-    const font_size = this._size * .55;
-    this._ctxGrid.font = `${font_size}px Times New Roman`;
-    this._ctxGrid.fillStyle = config.palette.label;
 
-    this._ctxGrid.textAlign = 'left';
     this._grid.rows
       .map((row, idx) => ({ labels: row.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)
-      .forEach(set => {
-        const x = grid_w + (font_size / 2);
-        const y = set.idx * this._size + (this._size / 2) + (font_size / 2);
-        this._ctxGrid.fillText(set.labels.join(' . '), x, y);
-      });
+      .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
 
-    this._ctxGrid.textAlign = 'center';
     this._grid.columns
       .map((col, idx) => ({ labels: col.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)
-      .forEach(set => {
-        const x = set.idx * this._size + (this._size / 2) + 2;
-        set.labels.forEach((label, idx) => {
-          this._ctxGrid.fillText(label + '', x, grid_h + ((font_size * 1.2) * (idx + 1.2)));
-        });
-      });
+      .forEach(set => this.setColumnLabels(set.idx, set.labels, grid_h));
 
     // cell states
     this._ctxGrid.beginPath();
@@ -422,6 +413,27 @@ export class Griddler extends CustomElementBase {
       );
     this._ctxGrid.fillStyle = config.palette.cells;
     this._ctxGrid.fill();
+  }
+
+  private setRowLabels(idx: number, labels: number[], grid_w?: number) {  
+    const isBulk = !!grid_w;
+    grid_w = grid_w || this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
+    const x = grid_w + (this._fontSize / 2);
+    const y = idx * this._size + (this._size / 2) + (this._fontSize / 2);
+    this._ctxGrid.textAlign = 'left';
+    if (!isBulk) this._ctxGrid.clearRect(x, idx * this._size, this.totalWidth, this._size);
+    this._ctxGrid.fillText(labels.join(' . '), x, y);
+  }
+
+  private setColumnLabels(idx: number, labels: number[], grid_h?: number) {
+    const isBulk = !!grid_h;
+    grid_h = grid_h || this.totalRows * this._size + Griddler.PIXEL_OFFSET;
+    const x = idx * this._size + (this._size / 2) + 2;
+    this._ctxGrid.textAlign = 'center';
+    if (!isBulk) this._ctxGrid.clearRect(idx * this._size, grid_h, this._size, this.totalHeight)
+    labels.forEach((label, idx) => {
+      this._ctxGrid.fillText(label + '', x, grid_h + ((this._fontSize * 1.2) * (idx + 1.2)));
+    });
   }
 
   private clearContext(context: CanvasRenderingContext2D) {
@@ -482,9 +494,13 @@ export class Griddler extends CustomElementBase {
   private receiveLabelUpdate() {
     const type = this._editLabelPopup.setType;
     const index = this._editLabelPopup.setIndex;
-    this._grid[type][index].labels = this._editLabelPopup.labels;
-
-    console.log('TODO: Redraw labels:', this._editLabelPopup.labels);
+    const set = this._grid[type][index];
+    const next = this._editLabelPopup.labels;
+    if (next.join(',') !== set.labels.join(',')) {
+      set.labels = next;
+      if (type === 'rows') this.setRowLabels(index, next);
+      else this.setColumnLabels(index, next);
+    }
   }
 }
 
