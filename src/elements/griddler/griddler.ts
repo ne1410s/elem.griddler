@@ -381,18 +381,17 @@ export class Griddler extends CustomElementBase {
   }
 
   private populate() {
-
     // labels
     this._ctxGrid.font = `${this._fontSize}px Times New Roman`;
     this._ctxGrid.fillStyle = config.palette.label;
+    
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
-    const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
-
     this._grid.rows
-      .map((row, idx) => ({ labels: row.labels, idx }))
-      .filter(set => set.labels && set.labels.length > 0)
-      .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
-
+    .map((row, idx) => ({ labels: row.labels, idx }))
+    .filter(set => set.labels && set.labels.length > 0)
+    .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
+    
+    const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
     this._grid.columns
       .map((col, idx) => ({ labels: col.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)

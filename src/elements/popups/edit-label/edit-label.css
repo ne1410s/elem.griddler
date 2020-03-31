@@ -1,29 +1,33 @@
 .body {
-  margin: 1em;
+  padding: .5em;
+  box-sizing: border-box;
   color: #555;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-#title {
-  font-size: 1.3em;
-  margin: .25em 0;
-}
+input { font: inherit; pointer-events: all; }
 
+#title { font-size: 1.3em; margin: .25em 0; }
+#errors { color: #f00; font-size: .8em; flex-grow: 1; }
+#errors ul { padding-left: 2em; }
+#buttons { text-align: right; margin: .5em; }
+
+#labels input.err { border-color: #f00; }
 #labels input {
-  border: 1px solid #ccc;
+  border: 2px solid #eee;
   border-radius: 2px;
   width: 2.5em;
-  font: inherit;
   padding: .2em;
   text-align: right;
   margin: .2em;
 }
 
-#errors {
-  color: #f00;
-  font-size: .8em;
-}
+#btnSave { color: #fff; background: #0d0; }
+#btnSave:disabled { opacity: 0.3; }
 
-#btnSave:disabled {
-  opacity: 0.3;
-}
+input[type=button]:not(:disabled) { cursor: pointer; }
+input[type=button] { border: 1px solid #aaa; }

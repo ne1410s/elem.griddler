@@ -22,12 +22,11 @@ export class EditLabelPopup extends Popup {
   private set errors(value: string[]) {
     const $err = q(this).first('#errors').empty();
     if (value.length > 0) {
-      const $list = $err
-        .append({tag: 'p', text: 'There are errors:'})
-        .append({tag: 'ul'})
-        .first('ul');
+      const $list = $err.append({tag: 'ul'}).first('ul');
       value.forEach(it => $list.append({tag: 'li', text: it}));
     }
+
+    if (!this.canShrink) this.fixMinSize();
   }
       
   constructor() {
@@ -38,8 +37,7 @@ export class EditLabelPopup extends Popup {
       .attr('resize', '')
       .append(this.decode(markupUrl))
       .append({tag: 'style', text: this.decode(stylesUrl)})
-      .on('open', () => this.reset())
-      .on('close', () => this.clear());
+      .on('open', () => this.reset());
     
     q(this).first('#btnCancel').on('click', () => this.dismiss());
     q(this).first('#btnSave').on('click', () => this.confirm());
@@ -53,17 +51,14 @@ export class EditLabelPopup extends Popup {
   private reset() {
     const typeName = this.setType === 'columns' ? 'Column' : 'Row';
     this.titleText = `${typeName} ${this.setIndex + 1}`;
-    this.clear();
-    this.renderBoxes();
-  }
-
-  private clear() {
     this.dirty = false;
-    this.errors = [];
-    this.$zone.empty();
+    this.renderBoxes();
+    this.validate();
+    if (!this.canShrink) this.fixMinSize();
   }
 
   private renderBoxes() {
+    this.$zone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
     for (let i = 0; i < minBoxes; i++) {
       this.addLabel(this.labels[i]);
@@ -97,13 +92,16 @@ export class EditLabelPopup extends Popup {
       return acc;
     }, { tot: 0, res: [] as number[], err: [] as string[] });
 
-    if (ranged.tot > this.capacity) {
-      ranged.err.unshift(`Too many blocks! Excess: ${ranged.tot - this.capacity}`);
+    const diff = ranged.tot - this.capacity;
+    if (diff > 0) {
+      ranged.err.unshift(`${ranged.tot} is ${diff} too many! (max: ${this.capacity})`);
     }
 
+    this.labels = ranged.res;
     this.errors = ranged.err;
     const valid = ranged.err.length === 0;
-    if (valid) this.labels = ranged.res;
+    const btnSave = q(this).first('#btnSave').elements[0] as HTMLInputElement;
+    btnSave.disabled = !valid;
     return valid;
   }
 

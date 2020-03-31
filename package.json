@@ -49,6 +49,6 @@
   "dependencies": {
     "@ne1410s/cust-elems": "0.0.7",
     "@ne1410s/dom": "^0.1.6",
-    "@ne1410s/popup": "^0.1.2"
+    "@ne1410s/popup": "^0.1.3"
   }
 }
