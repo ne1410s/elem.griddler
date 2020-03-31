@@ -172,7 +172,7 @@ export class Griddler extends CustomElementBase {
   /** Removes all cell data, leaving the labels intact. */
   clear() {
     if (!this.isBlank) {
-      this.addToHistory(this.toString()); 
+      this.addToHistory(this.toString());
       XGrid.WipeCells(this._grid);
       this.refresh();
     }
@@ -496,6 +496,7 @@ export class Griddler extends CustomElementBase {
     const set = this._grid[type][index];
     const next = this._editLabelPopup.labels;
     if (next.join(',') !== set.labels.join(',')) {
+      this.addToHistory(this.toString());
       set.labels = next;
       if (type === 'rows') this.setRowLabels(index, next);
       else this.setColumnLabels(index, next);

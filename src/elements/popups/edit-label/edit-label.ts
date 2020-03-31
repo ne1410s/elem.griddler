@@ -11,16 +11,17 @@ export class EditLabelPopup extends Popup {
   capacity: number;
   labels: number[];
     
-  private $zone: ChainedQuery;
+  private $body: ChainedQuery;
+  private $labelZone: ChainedQuery;
   private dirty: boolean;
   private get grace(): number { return this.capacity / 5; }
   
   private set titleText(value: string) {
-    q(this).first('#title').elements[0].textContent = value;
+    this.$body.first('#title').elements[0].textContent = value;
   }
 
   private set errors(value: string[]) {
-    const $err = q(this).first('#errors').empty();
+    const $err = this.$body.first('#errors').empty();
     if (value.length > 0) {
       const $list = $err.append({tag: 'ul'}).first('ul');
       value.forEach(it => $list.append({tag: 'li', text: it}));
@@ -35,17 +36,21 @@ export class EditLabelPopup extends Popup {
     q(this)
       .attr('move', '')
       .attr('resize', '')
+      .on('open', () => this.reset());
+
+    this.$body = q(this.root)
+      .find('.fore')
       .append(this.decode(markupUrl))
       .append({tag: 'style', text: this.decode(stylesUrl)})
-      .on('open', () => this.reset());
+      .find('.body');
     
-    q(this).first('#btnCancel').on('click', () => this.dismiss());
-    q(this).first('#btnSave').on('click', () => this.confirm());
+    this.$body.first('#btnCancel').on('click', () => this.dismiss());
+    this.$body.first('#btnSave').on('click', () => this.confirm());
 
     this.confirmCallback = () => this.validate();
     this.dismissCallback = () => !this.dirty || window.confirm('Abandon changes?');
 
-    this.$zone = q(this).first('#labels');
+    this.$labelZone = this.$body.first('#labels');
   }
 
   private reset() {
@@ -58,7 +63,7 @@ export class EditLabelPopup extends Popup {
   }
 
   private renderBoxes() {
-    this.$zone.empty();
+    this.$labelZone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
     for (let i = 0; i < minBoxes; i++) {
       this.addLabel(this.labels[i]);
@@ -66,7 +71,7 @@ export class EditLabelPopup extends Popup {
   }
 
   private addLabel(value?: number) {
-    this.$zone.append({ 
+    this.$labelZone.append({ 
       tag: 'input',
       evts: { input: () => this.onLabelInput() },
       attr: {
@@ -79,7 +84,7 @@ export class EditLabelPopup extends Popup {
 
   private validate(): boolean {
 
-    const ranged = this.$zone.find('input').elements.reduce((acc, cur) => {
+    const ranged = this.$labelZone.find('input').elements.reduce((acc, cur) => {
       const val = parseInt((cur as HTMLInputElement).value);
       cur.className = '';
       if (val) {
@@ -100,7 +105,7 @@ export class EditLabelPopup extends Popup {
     this.labels = ranged.res;
     this.errors = ranged.err;
     const valid = ranged.err.length === 0;
-    const btnSave = q(this).first('#btnSave').elements[0] as HTMLInputElement;
+    const btnSave = this.$body.first('#btnSave').elements[0] as HTMLInputElement;
     btnSave.disabled = !valid;
     return valid;
   }
