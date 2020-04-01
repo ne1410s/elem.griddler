@@ -1,11 +1,13 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
 import { q, ChainedQuery } from '@ne1410s/dom';
 
+import { SettingsPopup } from '../popups/settings/settings';
+import { HistoryPopup } from '../popups/history/history';
+import { EditLabelPopup } from '../popups/edit-label/edit-label';
 import { PlainGrid } from '../../format/plain-grid';
 import { Grid } from '../../solve/grid';
 import { XGrid } from '../../format/xgrid';
 import { DenseGrid } from '../../format/dense-grid';
-import { EditLabelPopup } from '../popups/edit-label/edit-label';
 
 import * as config from './config.json';
 import markupUrl from './griddler.html';
@@ -23,13 +25,15 @@ export class Griddler extends CustomElementBase {
   
   private readonly _ctxGrid: CanvasRenderingContext2D;
   private readonly _ctxLite: CanvasRenderingContext2D;
+  private readonly _settingsPopup = new SettingsPopup();
+  private readonly _historyPopup = new HistoryPopup();
+  private readonly _editLabelPopup = new EditLabelPopup();
 
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
   private _downCoords: GridContextPoint;
   private _history: string[] = [];
   private _historyIndex: number = 0;
-  private _editLabelPopup: EditLabelPopup;
   private _fontSize = this._size * .55;
 
   get totalColumns(): number { return this._grid.columns.length; }
@@ -137,6 +141,9 @@ export class Griddler extends CustomElementBase {
     
     this.$grid.on('contextmenu', event => event.preventDefault());
 
+    this.$root.find('#btnSettings').on('click', () => this._settingsPopup.open());
+    this.$root.find('#btnHistory').on('click', () => this._historyPopup.open());
+    this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnUndo').on('click', () => this.undoOne());
     this.$root.find('#btnClear').on('click', () => this.clear());
@@ -153,7 +160,16 @@ export class Griddler extends CustomElementBase {
       this.read(event.dataTransfer.files[0]);
     });
 
-    this._editLabelPopup = new EditLabelPopup();
+    this.$root
+      .append(this._settingsPopup)
+      .find('ne14-pop-settings')
+      .on('confirmaccept', () => console.log('handle settings change!'));
+
+    this.$root
+      .append(this._historyPopup)
+      .find('ne14-pop-history')
+      .on('confirmaccept', () => console.log('handle history change!'));
+
     this.$root
       .append(this._editLabelPopup)
       .find('ne14-pop-edit-label')

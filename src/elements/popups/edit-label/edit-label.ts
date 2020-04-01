@@ -12,7 +12,7 @@ export class EditLabelPopup extends Popup {
   labels: number[];
     
   private $body: ChainedQuery;
-  private $labelZone: ChainedQuery;
+  private $zone: ChainedQuery;
   private dirty: boolean;
   private get grace(): number { return this.capacity / 5; }
   
@@ -43,27 +43,26 @@ export class EditLabelPopup extends Popup {
       .append(this.decode(markupUrl))
       .append({tag: 'style', text: this.decode(stylesUrl)})
       .find('.body');
-    
+      
+    this.$zone = this.$body.first('#zone');
     this.$body.first('#btnCancel').on('click', () => this.dismiss());
     this.$body.first('#btnSave').on('click', () => this.confirm());
 
     this.confirmCallback = () => this.validate();
     this.dismissCallback = () => !this.dirty || window.confirm('Abandon changes?');
-
-    this.$labelZone = this.$body.first('#labels');
   }
 
   private reset() {
     const typeName = this.setType === 'columns' ? 'Column' : 'Row';
     this.titleText = `${typeName} ${this.setIndex + 1}`;
     this.dirty = false;
-    this.renderBoxes();
+    this.renderZone();
     this.validate();
     if (!this.canShrink) this.fixMinSize();
   }
 
-  private renderBoxes() {
-    this.$labelZone.empty();
+  private renderZone() {
+    this.$zone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
     for (let i = 0; i < minBoxes; i++) {
       this.addLabel(this.labels[i]);
@@ -71,7 +70,7 @@ export class EditLabelPopup extends Popup {
   }
 
   private addLabel(value?: number) {
-    this.$labelZone.append({ 
+    this.$zone.append({ 
       tag: 'input',
       evts: { input: () => this.onLabelInput() },
       attr: {
@@ -84,7 +83,7 @@ export class EditLabelPopup extends Popup {
 
   private validate(): boolean {
 
-    const ranged = this.$labelZone.find('input').elements.reduce((acc, cur) => {
+    const ranged = this.$zone.find('input').elements.reduce((acc, cur) => {
       const val = parseInt((cur as HTMLInputElement).value);
       cur.className = '';
       if (val) {
