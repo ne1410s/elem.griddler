@@ -5,21 +5,22 @@ import markupUrl from './griddler-popup.html';
 import stylesUrl from './griddler-popup.css';
 
 export abstract class GriddlerPopupBase extends Popup {
+  
+  protected abstract renderZone(): void;
+  protected abstract validate(): boolean;
 
+  protected $zone: ChainedQuery;
   protected $body: ChainedQuery;
-  private $zone: ChainedQuery;
-  private dirty: boolean;
+  protected dirty: boolean;
+  protected onOpen() {}
 
-  constructor(
-      move = true,
-      resize = true) {
-        
+  constructor(move = true, resize = true) {       
     super();
 
     if (move) q(this).attr('move', '');
     if (resize) q(this).attr('resize', '');
 
-    q(this).on('open', () => this.reset());
+    q(this).on('open', () => this.onOpenInternal());
 
     this.$body = q(this.root)
       .find('.fore')
@@ -35,14 +36,24 @@ export abstract class GriddlerPopupBase extends Popup {
     this.dismissCallback = () => !this.dirty || window.confirm('Abandon changes?');
   }
 
-  private reset() {
-    this.dirty = false;
-    this.renderZone();
-    this.validate();
+  protected set titleText(value: string) {
+    this.$body.first('#title').elements[0].textContent = value;
+  }
+
+  protected set errors(value: string[]) {
+    const $err = this.$body.first('#errors').empty();
+    if (value.length > 0) {
+      const $list = $err.appendIn({tag: 'ul'});
+      value.forEach(it => $list.append({tag: 'li', text: it}));
+    }
+
     if (!this.canShrink) this.fixMinSize();
   }
 
-  protected abstract renderZone(): void;
-
-  protected abstract validate(): boolean;
+  private onOpenInternal() {
+    this.dirty = false;
+    this.onOpen();
+    this.renderZone();
+    this.validate();
+  }
 }

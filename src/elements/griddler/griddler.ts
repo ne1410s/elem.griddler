@@ -161,18 +161,15 @@ export class Griddler extends CustomElementBase {
     });
 
     this.$root
-      .append(this._settingsPopup)
-      .find('ne14-pop-settings')
+      .appendIn(this._settingsPopup)
       .on('confirmaccept', () => console.log('handle settings change!'));
 
     this.$root
-      .append(this._historyPopup)
-      .find('ne14-pop-history')
+      .appendIn(this._historyPopup)
       .on('confirmaccept', () => console.log('handle history change!'));
 
     this.$root
-      .append(this._editLabelPopup)
-      .find('ne14-pop-edit-label')
+      .appendIn(this._editLabelPopup)
       .on('confirmaccept', () => this.receiveLabelUpdate());
   }
 

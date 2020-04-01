@@ -1,88 +1,34 @@
-import { q, ChainedQuery } from '@ne1410s/dom';
-import { Popup } from '@ne1410s/popup';
+import { GriddlerPopupBase } from '../base/griddler-popup';
 
-import markupUrl from './edit-label.html';
-import stylesUrl from './edit-label.css';
-
-export class EditLabelPopup extends Popup {
+export class EditLabelPopup extends GriddlerPopupBase {
   
   setType: 'columns' | 'rows';
   setIndex: number;
   capacity: number;
   labels: number[];
-    
-  private $body: ChainedQuery;
-  private $zone: ChainedQuery;
-  private dirty: boolean;
-  private get grace(): number { return this.capacity / 5; }
-  
-  private set titleText(value: string) {
-    this.$body.first('#title').elements[0].textContent = value;
-  }
 
-  private set errors(value: string[]) {
-    const $err = this.$body.first('#errors').empty();
-    if (value.length > 0) {
-      const $list = $err.append({tag: 'ul'}).first('ul');
-      value.forEach(it => $list.append({tag: 'li', text: it}));
-    }
-
-    if (!this.canShrink) this.fixMinSize();
-  }
-      
   constructor() {
     super();
-
-    q(this)
-      .attr('move', '')
-      .attr('resize', '')
-      .on('open', () => this.reset());
-
-    this.$body = q(this.root)
-      .find('.fore')
-      .append(this.decode(markupUrl))
-      .append({tag: 'style', text: this.decode(stylesUrl)})
-      .find('.body');
-      
-    this.$zone = this.$body.first('#zone');
-    this.$body.first('#btnCancel').on('click', () => this.dismiss());
-    this.$body.first('#btnSave').on('click', () => this.confirm());
-
-    this.confirmCallback = () => this.validate();
-    this.dismissCallback = () => !this.dirty || window.confirm('Abandon changes?');
   }
 
-  private reset() {
+  private get grace(): number { return this.capacity / 5; }
+
+  protected onOpen() {
     const typeName = this.setType === 'columns' ? 'Column' : 'Row';
     this.titleText = `${typeName} ${this.setIndex + 1}`;
-    this.dirty = false;
-    this.renderZone();
-    this.validate();
-    if (!this.canShrink) this.fixMinSize();
   }
 
-  private renderZone() {
+  protected renderZone() {
     this.$zone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
     for (let i = 0; i < minBoxes; i++) {
       this.addLabel(this.labels[i]);
     }
+
+    if (!this.canShrink) this.fixMinSize();
   }
 
-  private addLabel(value?: number) {
-    this.$zone.append({ 
-      tag: 'input',
-      evts: { input: () => this.onLabelInput() },
-      attr: {
-        type: 'number',
-        value: value ? `${value}` : '',
-        min: '0', max: `${this.capacity}`
-      },
-    });
-  }
-
-  private validate(): boolean {
-
+  protected validate(): boolean {
     const ranged = this.$zone.find('input').elements.reduce((acc, cur) => {
       const val = parseInt((cur as HTMLInputElement).value);
       cur.className = '';
@@ -107,6 +53,18 @@ export class EditLabelPopup extends Popup {
     const btnSave = this.$body.first('#btnSave').elements[0] as HTMLInputElement;
     btnSave.disabled = !valid;
     return valid;
+  }
+
+  private addLabel(value?: number) {
+    this.$zone.append({ 
+      tag: 'input',
+      evts: { input: () => this.onLabelInput() },
+      attr: {
+        type: 'number',
+        value: value ? `${value}` : '',
+        min: '0', max: `${this.capacity}`
+      },
+    });
   }
 
   private onLabelInput() {
