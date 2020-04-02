@@ -1,9 +1,9 @@
-import { SetType, CellState } from "./enums";
-import { FullSet } from "./full-set";
-import { Label } from "./label";
-import { HintResult, SolveResult } from "./result";
-import { Utils } from "../format/utils";
-import { PlainGrid, PlainSet, PlainDataSet } from "../format/plain-grid";
+import { SetType, CellState } from './enums';
+import { FullSet } from './full-set';
+import { Label } from './label';
+import { HintResult, SolveResult } from './result';
+import { Utils } from '../utils';
+import { PlainGrid, PlainSet, PlainDataSet } from '../models/grid';
 
 /** A griddler grid. */
 export class Grid {

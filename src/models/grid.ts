@@ -1,6 +1,4 @@
-import { DenseGrid } from "./dense-grid";
-import { PlainGrid, PlainDataSet } from "./plain-grid";
-import { Utils } from "./utils";
+import { Utils } from '../utils';
 
 export abstract class XGrid {
 
@@ -91,4 +89,22 @@ export abstract class XGrid {
 
     return retVal;
   }
+}
+
+export interface PlainGrid {
+  columns: PlainSet[];
+  rows: PlainDataSet[];
+}
+
+export interface PlainSet {
+  labels?: number[];
+}
+
+export interface PlainDataSet extends PlainSet {
+  cells?: (0 | 1 | 2)[];
+}
+
+export interface DenseGrid {
+  c: string;
+  r: string;
 }

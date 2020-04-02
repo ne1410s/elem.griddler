@@ -13,11 +13,6 @@ export class EditLabelPopup extends GriddlerPopupBase {
 
   private get grace(): number { return this.capacity / 5; }
 
-  protected onOpen() {
-    const typeName = this.setType === 'columns' ? 'Column' : 'Row';
-    this.titleText = `${typeName} ${this.setIndex + 1}`;
-  }
-
   protected renderZone() {
     this.$zone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
@@ -28,6 +23,11 @@ export class EditLabelPopup extends GriddlerPopupBase {
     if (!this.canShrink) this.fixMinSize();
   }
 
+  protected onOpen() {
+    const typeName = this.setType === 'columns' ? 'Column' : 'Row';
+    this.titleText = `${typeName} ${this.setIndex + 1}`;
+  }
+  
   protected validate(): boolean {
     const ranged = this.$zone.find('input').elements.reduce((acc, cur) => {
       const val = parseInt((cur as HTMLInputElement).value);

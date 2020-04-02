@@ -3,6 +3,7 @@ import { Popup } from '@ne1410s/popup';
 
 import markupUrl from './griddler-popup.html';
 import stylesUrl from './griddler-popup.css';
+import { QuickParam } from '@ne1410s/dom/dist/models';
 
 export abstract class GriddlerPopupBase extends Popup {
   
@@ -14,7 +15,12 @@ export abstract class GriddlerPopupBase extends Popup {
   protected dirty: boolean;
   protected onOpen() {}
 
-  constructor(move = true, resize = true) {       
+  constructor(
+      zoneMarkupUrl?: string,
+      moreStylesUrl?: string,
+      move = true,
+      resize = true) {  
+
     super();
 
     if (move) q(this).attr('move', '');
@@ -22,15 +28,22 @@ export abstract class GriddlerPopupBase extends Popup {
 
     q(this).on('open', () => this.onOpenInternal());
 
+    const styleTagParams: QuickParam[] = [{ tag: 'style', text: this.decode(stylesUrl) }];
+    if (moreStylesUrl) styleTagParams.push({ tag: 'style', text: this.decode(moreStylesUrl) });
+
     this.$body = q(this.root)
       .find('.fore')
       .append(this.decode(markupUrl))
-      .append({tag: 'style', text: this.decode(stylesUrl)})
+      .append(...styleTagParams)
       .find('.body');
 
-    this.$zone = this.$body.first('#zone');
     this.$body.first('#btnCancel').on('click', () => this.dismiss());
     this.$body.first('#btnSave').on('click', () => this.confirm());
+
+    this.$zone = this.$body.first('#zone');
+    if (zoneMarkupUrl) {
+      this.$zone.append(this.decode(zoneMarkupUrl));
+    }
 
     this.confirmCallback = () => this.validate();
     this.dismissCallback = () => !this.dirty || window.confirm('Abandon changes?');

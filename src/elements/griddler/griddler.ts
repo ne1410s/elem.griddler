@@ -1,13 +1,12 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
 import { q, ChainedQuery } from '@ne1410s/dom';
 
+import { Grid } from '../../solve/grid';
+import { XGrid, PlainGrid, DenseGrid } from '../../models/grid';
+import { Point, GridContextPoint, GridEditHistory } from '../../models/meta';
 import { SettingsPopup } from '../popups/settings/settings';
 import { HistoryPopup } from '../popups/history/history';
 import { EditLabelPopup } from '../popups/edit-label/edit-label';
-import { PlainGrid } from '../../format/plain-grid';
-import { Grid } from '../../solve/grid';
-import { XGrid } from '../../format/xgrid';
-import { DenseGrid } from '../../format/dense-grid';
 
 import * as config from './config.json';
 import markupUrl from './griddler.html';
@@ -32,7 +31,7 @@ export class Griddler extends CustomElementBase {
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
   private _downCoords: GridContextPoint;
-  private _history: string[] = [];
+  private _history: GridEditHistory[] = [];
   private _historyIndex: number = 0;
   private _fontSize = this._size * .55;
 
@@ -127,7 +126,7 @@ export class Griddler extends CustomElementBase {
         }
 
         if (this._downCoords.pending) {
-          this.addToHistory(this._downCoords.snapshot);
+          this.addToHistory('paint', this._downCoords.snapshot);
         }
 
         this._downCoords = null;
@@ -142,7 +141,7 @@ export class Griddler extends CustomElementBase {
     this.$grid.on('contextmenu', event => event.preventDefault());
 
     this.$root.find('#btnSettings').on('click', () => this._settingsPopup.open());
-    this.$root.find('#btnHistory').on('click', () => this._historyPopup.open());
+    this.$root.find('#btnHistory').on('click', () => this.showHistoryModal());
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnUndo').on('click', () => this.undoOne());
@@ -177,7 +176,7 @@ export class Griddler extends CustomElementBase {
    * Draws a grid according to the grid data supplied.
    * @param grid The grid data.
    */
-  load(grid: PlainGrid | DenseGrid | { x: number, y: number }) {
+  load(grid: PlainGrid | DenseGrid | Point) {
     this._grid = XGrid.AsPlain(grid);
     this.refresh();
   }
@@ -185,7 +184,7 @@ export class Griddler extends CustomElementBase {
   /** Removes all cell data, leaving the labels intact. */
   clear() {
     if (!this.isBlank) {
-      this.addToHistory(this.toString());
+      this.addToHistory('clear', this.toString());
       XGrid.WipeCells(this._grid);
       this.refresh();
     }
@@ -197,7 +196,7 @@ export class Griddler extends CustomElementBase {
       const result = Grid.load(this._grid).solve();
       if (result.solved) {
         console.log('Solved in ' + result.solvedMs + 'ms');
-        this.addToHistory(this.toString());
+        this.addToHistory('solve', this.toString());
         this.load(result.grid);
       }
     }
@@ -307,15 +306,17 @@ export class Griddler extends CustomElementBase {
       const loaded = e.target.result as string;
       if (loaded !== current) {
         this.load(JSON.parse(loaded));
-        this.addToHistory(current);
+        this.addToHistory('load', current);
       }
     }
     reader.readAsText(file);
   }
 
-  private addToHistory(snapshot: string): void {
+  private addToHistory(type: string, grid: string): void {
     this._history.splice(this._historyIndex);
-    this._historyIndex = this._history.push(snapshot);
+    this._historyIndex = this._history.push({ 
+      date: new Date(), type, grid
+    });
     this.historyChanged();
   }
 
@@ -328,10 +329,10 @@ export class Griddler extends CustomElementBase {
 
   private gotoHistory(newIndex: number): void {
     if (newIndex === this._historyIndex) return;
-    const snapshot = this._history[newIndex];
-    if (snapshot) {
+    const historyItem = this._history[newIndex];
+    if (historyItem) {
       this._historyIndex = newIndex;
-      this.load(JSON.parse(snapshot));
+      this.load(JSON.parse(historyItem.grid));
       this.historyChanged();
     }
   }
@@ -339,8 +340,8 @@ export class Griddler extends CustomElementBase {
   private undoOne(): void {
     if (this._historyIndex === this._history.length) {  
       const curr = this.toString();
-      if (curr !== this._history[this._historyIndex]) {
-        this.addToHistory(curr);
+      if (curr !== this._history[this._historyIndex]?.grid) {
+        this.addToHistory('undo', curr);
         this._historyIndex--;
       }
     }
@@ -495,6 +496,12 @@ export class Griddler extends CustomElementBase {
     }
   }
 
+  private showHistoryModal() {
+    this._historyPopup.historyItems = this._history;
+    this._historyPopup.historyIndex = this._historyIndex;
+    this._historyPopup.open();
+  }
+
   private showLabelModal(type: 'columns' | 'rows', index: number) {
     this._editLabelPopup.setType = type;
     this._editLabelPopup.setIndex = index;
@@ -509,24 +516,10 @@ export class Griddler extends CustomElementBase {
     const set = this._grid[type][index];
     const next = this._editLabelPopup.labels;
     if (next.join(',') !== set.labels.join(',')) {
-      this.addToHistory(this.toString());
+      this.addToHistory('label', this.toString());
       set.labels = next;
       if (type === 'rows') this.setRowLabels(index, next);
       else this.setColumnLabels(index, next);
     }
   }
-}
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface GridContextPoint extends Point {
-  x0: number;
-  y0: number;
-  which: 'left' | 'right';
-  state: 0 | 1 | 2;
-  snapshot: string;
-  pending?: boolean;
 }

@@ -1,4 +1,4 @@
-import { PlainGrid } from "../format/plain-grid";
+import { PlainGrid } from '../models/grid';
 
 /** The outcome of running a 'solve' grid method. */
 export class SolveResult {
