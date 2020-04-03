@@ -13,20 +13,19 @@ export abstract class GriddlerPopupBase extends Popup {
   protected $zone: ChainedQuery;
   protected $body: ChainedQuery;
   protected dirty: boolean;
-  protected onOpen() {}
 
   constructor(
       zoneMarkupUrl?: string,
       moreStylesUrl?: string,
       move = true,
-      resize = true) {  
+      resize = true) {
 
     super();
 
     if (move) q(this).attr('move', '');
     if (resize) q(this).attr('resize', '');
 
-    q(this).on('open', () => this.onOpenInternal());
+    q(this).on('open', () => this.onOpen());
 
     const styleTagParams: QuickParam[] = [{ tag: 'style', text: this.decode(stylesUrl) }];
     if (moreStylesUrl) styleTagParams.push({ tag: 'style', text: this.decode(moreStylesUrl) });
@@ -59,13 +58,10 @@ export abstract class GriddlerPopupBase extends Popup {
       const $list = $err.appendIn({tag: 'ul'});
       value.forEach(it => $list.append({tag: 'li', text: it}));
     }
-
-    if (!this.canShrink) this.fixMinSize();
   }
 
-  private onOpenInternal() {
+  private onOpen() {
     this.dirty = false;
-    this.onOpen();
     this.renderZone();
     this.validate();
   }

@@ -9,18 +9,17 @@ export class HistoryPopup extends GriddlerPopupBase {
 
   constructor() {
     super(markupUrl);
-
-    // ...
+    this.titleText = 'Change History';
   }
 
   protected renderZone() {
-    // ...
-  }
+    const $table = this.$zone.first('.table');
 
-  protected onOpen() {
-    // ...
-    console.log(this.historyItems);
-    console.log(this.historyIndex);
+    this.historyItems.forEach((item, i) => {
+      $table
+        .appendIn(`<div><p>${item.type}</p><p>${item.date}</p></div>`)
+        .attr('class', i === this.historyIndex ? 'selected row' : 'row');
+    });
   }
 
   protected validate(): boolean {

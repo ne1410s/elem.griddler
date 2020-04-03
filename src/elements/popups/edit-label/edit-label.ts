@@ -14,18 +14,14 @@ export class EditLabelPopup extends GriddlerPopupBase {
   private get grace(): number { return this.capacity / 5; }
 
   protected renderZone() {
+    const typeName = this.setType === 'columns' ? 'Column' : 'Row';
+    this.titleText = `${typeName} ${this.setIndex + 1}`;
+
     this.$zone.empty();
     const minBoxes = Math.max(this.labels.length + 1, this.grace);
     for (let i = 0; i < minBoxes; i++) {
       this.addLabel(this.labels[i]);
     }
-
-    if (!this.canShrink) this.fixMinSize();
-  }
-
-  protected onOpen() {
-    const typeName = this.setType === 'columns' ? 'Column' : 'Row';
-    this.titleText = `${typeName} ${this.setIndex + 1}`;
   }
   
   protected validate(): boolean {

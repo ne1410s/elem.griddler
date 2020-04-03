@@ -143,7 +143,6 @@ export class Griddler extends CustomElementBase {
     this.$root.find('#btnSettings').on('click', () => this._settingsPopup.open());
     this.$root.find('#btnHistory').on('click', () => this.showHistoryModal());
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
-    this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnUndo').on('click', () => this.undoOne());
     this.$root.find('#btnClear').on('click', () => this.clear());
     this.$root.find('#btnSolve').on('click', () => this.solve());
@@ -321,8 +320,10 @@ export class Griddler extends CustomElementBase {
   }
 
   private historyChanged(): void {
+    const btnHistory = this.root.querySelector('#btnHistory') as HTMLInputElement;
     const btnUndo = this.root.querySelector('#btnUndo') as HTMLInputElement;
     const btnRedo = this.root.querySelector('#btnRedo') as HTMLInputElement;
+    btnHistory.disabled = !this._history?.length;
     btnUndo.disabled = this._historyIndex <= 0;
     btnRedo.disabled = this._historyIndex >= this._history.length - 1;
   }

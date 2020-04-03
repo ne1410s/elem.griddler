@@ -4,7 +4,7 @@ export class SettingsPopup extends GriddlerPopupBase {
 
   constructor() {
     super();
-
+    this.titleText = 'Settings';
     // ...
   }
 
