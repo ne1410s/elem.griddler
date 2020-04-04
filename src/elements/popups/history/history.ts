@@ -1,6 +1,9 @@
+import { q } from '@ne1410s/dom';
 import { GriddlerPopupBase } from '../base/griddler-popup';
 import { GridEditHistory } from '../../../models/meta';
+
 import markupUrl from './history.html';
+import stylesUrl from './history.css';
 
 export class HistoryPopup extends GriddlerPopupBase {
 
@@ -8,12 +11,16 @@ export class HistoryPopup extends GriddlerPopupBase {
   historyIndex: number;
 
   constructor() {
-    super(markupUrl);
+    super(markupUrl, stylesUrl);
     this.titleText = 'Change History';
   }
 
   protected renderZone() {
-    const $table = this.$zone.first('.table');
+    
+    const $table = this.$zone 
+      .first('.table')
+      .empty()
+      .append('<div class="header row"><p>Type</p><p>Date</p></div>');
 
     this.historyItems.forEach((item, i) => {
       $table
