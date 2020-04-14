@@ -10,7 +10,7 @@ import pkg from './package.json';
 export default {
   input: 'src/index.ts',
   output: {
-    name: 'ne_grid',
+    name: pkg.displayName,
     file: pkg.browser,
     format: 'umd',
     globals: {
