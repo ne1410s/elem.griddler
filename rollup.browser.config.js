@@ -17,6 +17,7 @@ export default {
       '@ne1410s/cust-elems': 'ne_cust_elems',
       '@ne1410s/dom': 'ne_dom',
       '@ne1410s/popup': 'ne_pop',
+      '@ne1410s/pxl8r': 'ne_pxl8r',
     }
   },
   plugins: [

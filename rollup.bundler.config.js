@@ -11,6 +11,7 @@ export default {
     '@ne1410s/cust-elems',
     '@ne1410s/dom',
     '@ne1410s/popup',
+    '@ne1410s/pxl8r',
   ],
   output: [
     { file: pkg.main, format: 'cjs' },
