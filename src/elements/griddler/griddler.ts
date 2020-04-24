@@ -155,7 +155,7 @@ export class Griddler extends CustomElementBase {
     this.$root.find('#btnImport input').on('change', event => {
       this.read((event.target as HTMLInputElement).files[0]);
     });
-    this.$root.find('#btnPixels').on('click', () => this.showPixelsModal());
+    this.$root.find('#btnPixels').on('click', () => this._pixelsPopup.open());
     this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
     this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
@@ -503,11 +503,6 @@ export class Griddler extends CustomElementBase {
         this._size - 2 * buffer,
         this._size - 2 * buffer);
     }
-  }
-
-  private showPixelsModal() {
-    this._pixelsPopup.pixelsX = this._grid.columns.length;
-    this._pixelsPopup.open();
   }
 
   private showHistoryModal() {
