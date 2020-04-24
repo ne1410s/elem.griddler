@@ -1,4 +1,3 @@
-import { q } from '@ne1410s/dom';
 import { GriddlerPopupBase } from '../base/griddler-popup';
 import { GridEditHistory } from '../../../models/meta';
 

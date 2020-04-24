@@ -4,9 +4,11 @@ import { q, ChainedQuery } from '@ne1410s/dom';
 import { Grid } from '../../solve/grid';
 import { XGrid, PlainGrid, DenseGrid } from '../../models/grid';
 import { Point, GridContextPoint, GridEditHistory } from '../../models/meta';
+
 import { SettingsPopup } from '../popups/settings/settings';
 import { HistoryPopup } from '../popups/history/history';
 import { EditLabelPopup } from '../popups/edit-label/edit-label';
+import { PixelsPopup } from '../popups/pixels/pixels';
 
 import * as config from './config.json';
 import markupUrl from './griddler.html';
@@ -27,6 +29,7 @@ export class Griddler extends CustomElementBase {
   private readonly _settingsPopup = new SettingsPopup();
   private readonly _historyPopup = new HistoryPopup();
   private readonly _editLabelPopup = new EditLabelPopup();
+  private readonly _pixelsPopup = new PixelsPopup();
 
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
@@ -152,6 +155,7 @@ export class Griddler extends CustomElementBase {
     this.$root.find('#btnImport input').on('change', event => {
       this.read((event.target as HTMLInputElement).files[0]);
     });
+    this.$root.find('#btnPixels').on('click', () => this.showPixelsModal());
     this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
     this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
@@ -169,6 +173,10 @@ export class Griddler extends CustomElementBase {
     this.$root
       .appendIn(this._editLabelPopup)
       .on('confirmaccept', () => this.receiveLabelUpdate());
+
+    this.$root
+      .appendIn(this._pixelsPopup)
+      .on('confirmaccept', () => console.log('handle pixels change!'));
   }
 
   /**
@@ -495,6 +503,11 @@ export class Griddler extends CustomElementBase {
         this._size - 2 * buffer,
         this._size - 2 * buffer);
     }
+  }
+
+  private showPixelsModal() {
+    this._pixelsPopup.pixelsX = this._grid.columns.length;
+    this._pixelsPopup.open();
   }
 
   private showHistoryModal() {
