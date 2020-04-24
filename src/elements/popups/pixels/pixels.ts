@@ -1,16 +1,26 @@
 import { Pxl8r } from '@ne1410s/pxl8r';
 import { GriddlerPopupBase } from '../base/griddler-popup';
-import { PlainGrid } from '../../../models/grid';
+import { PlainGrid, XGrid } from '../../../models/grid';
 import markupUrl from './pixels.html';
 import stylesUrl from './pixels.css';
+import { Grid } from '../../../solve/grid';
 
 export class PixelsPopup extends GriddlerPopupBase {
 
   private renderData: ImageData;
 
-  public get asGrid(): PlainGrid {
-    // TODO: Map the renderData into a plain ol grid and return it..
-    return null;
+  public get plainGrid(): PlainGrid {
+    return this.renderData ? XGrid.AsPlain(this.renderData) : null;
+  }
+
+  public get labelGrid(): PlainGrid {
+    const grid = this.plainGrid;
+    if (grid != null) {
+      XGrid.ScrapeLabels(grid);
+      XGrid.WipeCells(grid);
+    }
+
+    return grid;
   }
 
   constructor() { 
@@ -27,9 +37,14 @@ export class PixelsPopup extends GriddlerPopupBase {
   }
 
   protected validate(): boolean {
-    const freshGrid = this.asGrid;
-    // TODO: Return whether fresh grid is solvable or not!
-    return true;
+    let retVal = false;
+    const testGrid = this.labelGrid;
+    if (testGrid != null) {
+      const solveResult = Grid.load(testGrid);
+      retVal = solveResult.solved;
+    }
+
+    return retVal;
   }
 }
 

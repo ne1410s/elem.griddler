@@ -2,19 +2,20 @@ import { Utils } from '../utils';
 
 export abstract class XGrid {
 
-  public static AsPlain(grid: PlainGrid | DenseGrid | { x: number, y: number }): PlainGrid {
+  public static AsPlain(grid: PlainGrid | DenseGrid | { x: number, y: number } | ImageData): PlainGrid {
     const g = grid as any;
-    const retVal = g.x && g.y ? XGrid.CreatePlain(g.x, g.y)
-      : g.c && g.r ? XGrid.ToPlain(grid as DenseGrid)
-      : g.rows && g.columns ? grid as PlainGrid
-      : null;
+    const retVal = grid instanceof ImageData ? XGrid.FromImage(grid)
+      : g.x && g.y ? XGrid.CreatePlain(g.x, g.y)
+        : g.c && g.r ? XGrid.ToPlain(grid as DenseGrid)
+          : g.rows && g.columns ? grid as PlainGrid
+            : null;
     if (retVal == null) {
       throw new RangeError('Unable to interpret as a plain grid.');
     }
 
     return retVal;
   }
-  
+
   public static ToDense(plain: PlainGrid): DenseGrid {
 
     const derive = (ds: PlainDataSet): string => {
@@ -24,7 +25,7 @@ export abstract class XGrid {
       const data = ds.cells.reduce((acc, cur, i) => {
         const symbol = cur === 2 ? 'm' : cur === 1 ? 'f' : 'e';
         const isLast = i === ds.cells.length - 1;
-        
+
         if (!acc.symbol) { acc.symbol = symbol; acc.count = 0; };
         if (acc.symbol === symbol) { acc.count++; }
         if (acc.count !== 0 && (acc.symbol !== symbol || isLast)) {
@@ -53,7 +54,18 @@ export abstract class XGrid {
     const emptyRow = Utils.FillArray(plain.columns.length, (): 0 => 0);
     plain.rows.forEach(r => r.cells = emptyRow.slice());
   }
-  
+
+  public static ScrapeLabels(plain: PlainGrid): void {
+    const denseRows = XGrid.ToDense(plain).r.split('|');
+    denseRows.forEach((row, i) => {
+      plain.rows[i].labels = (row.match(/f\d*/g) || [])
+        .map(fd => parseInt(fd.substring(1) || '1'));
+    });
+
+    console.warn('TODO: SCRAPE COLUMN LABELS!!!');
+    // TODO: Column labels!
+  }
+
   private static CreatePlain(columns: number, rows: number): PlainGrid {
     const emptyRow = Utils.FillArray(columns, (): 0 => 0);
     return {
@@ -63,7 +75,7 @@ export abstract class XGrid {
   }
 
   private static ToPlain(dense: DenseGrid): PlainGrid {
-    
+
     const cols = dense.c.split('|');
     const rows = dense.r.split('|');
     const retVal = XGrid.CreatePlain(cols.length, rows.length);
@@ -83,9 +95,21 @@ export abstract class XGrid {
           const freq = cur ? (parseInt(cur.substring(1)) || 1) : cols.length;
           acc = acc.concat(Utils.FillArray(freq, () => numero));
           return acc;
-        }, []); 
+        }, []);
       }
     });
+
+    return retVal;
+  }
+
+  private static FromImage(img: ImageData): PlainGrid {
+    const retVal = XGrid.CreatePlain(img.width, img.height);
+    for (let x = 3; x < img.data.length; x += 4) {
+      const rowNum = Math.floor(((x - 3) / 4) / img.width);
+      const colNum = ((x - 3) / 4) % img.width;
+      const isBlock = img.data[x - 3] === 0 && img.data[x - 2] === 0 && img.data[x - 1] === 0;
+      if (isBlock) retVal.rows[rowNum].cells[colNum] = 1;
+    }
 
     return retVal;
   }

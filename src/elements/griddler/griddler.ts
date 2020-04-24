@@ -156,6 +156,14 @@ export class Griddler extends CustomElementBase {
       this.read((event.target as HTMLInputElement).files[0]);
     });
     this.$root.find('#btnPixels').on('click', () => this._pixelsPopup.open());
+    this.$root.find('#btnLabels').on('click', () => {
+      const prev = this.toString();
+      XGrid.ScrapeLabels(this._grid);
+      this.populate();
+      if (prev !== this.toString()) {
+        this.addToHistory('scrape', prev);
+      }
+    });
     this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
     this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
@@ -176,7 +184,13 @@ export class Griddler extends CustomElementBase {
 
     this.$root
       .appendIn(this._pixelsPopup)
-      .on('confirmaccept', () => console.log('handle pixels change!'));
+      .on('confirmaccept', () => {
+        const prevGrid = this.toString();
+        this.load(this._pixelsPopup.labelGrid);
+        if (this.toString() !== prevGrid) {
+          this.addToHistory('pixels', prevGrid);
+        }
+      });
   }
 
   /**
@@ -404,7 +418,11 @@ export class Griddler extends CustomElementBase {
   }
 
   private populate() {
-    // labels
+    this.populateLabels();
+    this.populateStates();
+  }
+
+  private populateLabels() {
     this._ctxGrid.font = `${this._fontSize}px Times New Roman`;
     this._ctxGrid.fillStyle = config.palette.label;
     
@@ -419,8 +437,9 @@ export class Griddler extends CustomElementBase {
       .map((col, idx) => ({ labels: col.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)
       .forEach(set => this.setColumnLabels(set.idx, set.labels, grid_h));
+  }
 
-    // cell states
+  private populateStates() {
     this._ctxGrid.beginPath();
     this._grid.rows
       .map((row, idx) => ({ cells: row.cells, idx }))
