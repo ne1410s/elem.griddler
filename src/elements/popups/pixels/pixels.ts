@@ -44,6 +44,9 @@ export class PixelsPopup extends GriddlerPopupBase {
       retVal = solveResult.solved;
     }
 
+    console.log(testGrid);
+    console.log('Solvable?', retVal);
+
     return retVal;
   }
 }

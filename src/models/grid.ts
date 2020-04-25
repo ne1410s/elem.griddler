@@ -56,14 +56,12 @@ export abstract class XGrid {
   }
 
   public static ScrapeLabels(plain: PlainGrid): void {
+    XGrid.ScrapeColumnLabels(plain);
     const denseRows = XGrid.ToDense(plain).r.split('|');
     denseRows.forEach((row, i) => {
       plain.rows[i].labels = (row.match(/f\d*/g) || [])
         .map(fd => parseInt(fd.substring(1) || '1'));
     });
-
-    console.warn('TODO: SCRAPE COLUMN LABELS!!!');
-    // TODO: Column labels!
   }
 
   private static CreatePlain(columns: number, rows: number): PlainGrid {
@@ -112,6 +110,22 @@ export abstract class XGrid {
     }
 
     return retVal;
+  }
+
+  /** Scrapes column labels from cell state */
+  private static ScrapeColumnLabels(plain: PlainGrid): void {
+    plain.columns.forEach((col, c) => {
+      col.labels = [];
+      let run = 0;
+      for (let r = 0; r < plain.rows.length; r++) {
+        const isBlock = plain.rows[r].cells[c] === 1;
+        if (isBlock) run++;
+        if (run > 0 && (!isBlock || r === plain.rows.length - 1)) {
+          col.labels.push(run);
+          run = 0;
+        }
+      }
+    });
   }
 }
 
