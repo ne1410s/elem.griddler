@@ -159,7 +159,7 @@ export class Griddler extends CustomElementBase {
     this.$root.find('#btnLabels').on('click', () => {
       const prev = this.toString();
       XGrid.ScrapeLabels(this._grid);
-      this.populate();
+      this.populateLabels();
       if (prev !== this.toString()) {
         this.addToHistory('scrape', prev);
       }
@@ -427,12 +427,14 @@ export class Griddler extends CustomElementBase {
     this._ctxGrid.fillStyle = config.palette.label;
     
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
+    this._ctxGrid.clearRect(grid_w, 0, this.totalWidth, this.totalHeight);
     this._grid.rows
-    .map((row, idx) => ({ labels: row.labels, idx }))
-    .filter(set => set.labels && set.labels.length > 0)
-    .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
-    
+      .map((row, idx) => ({ labels: row.labels, idx }))
+      .filter(set => set.labels && set.labels.length > 0)
+      .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
+      
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
+    this._ctxGrid.clearRect(0, grid_h, this.totalWidth, this.totalHeight);
     this._grid.columns
       .map((col, idx) => ({ labels: col.labels, idx }))
       .filter(set => set.labels && set.labels.length > 0)

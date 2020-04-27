@@ -37,15 +37,17 @@ export class PixelsPopup extends GriddlerPopupBase {
   }
 
   protected validate(): boolean {
+    const test = this.labelGrid;
     let retVal = false;
-    const testGrid = this.labelGrid;
-    if (testGrid != null) {
-      const solveResult = Grid.load(testGrid);
-      retVal = solveResult.solved;
-    }
+    if (test != null) {
+      const result = Grid.load(test).solve();
+      if (!result.solved) {
+        // TODO: Feedback for UI - e.g. cell state
+        console.warn('Feed this back:', result);
+      }
 
-    console.log(testGrid);
-    console.log('Solvable?', retVal);
+      retVal = result.solved;
+    }
 
     return retVal;
   }
