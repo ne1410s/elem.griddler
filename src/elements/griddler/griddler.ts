@@ -229,8 +229,8 @@ export class Griddler extends CustomElementBase {
   refresh() {
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
-    const labels_w = grid_w * 2 / 5;
-    const labels_h = grid_h * 2 / 5;
+    const labels_w = Math.max(this._size * 2, grid_w * 2 / 5);
+    const labels_h = Math.max(this._size * 2, grid_h * 2 / 5);
 
     this.totalWidth = grid_w + labels_w;
     this.totalHeight = grid_h + labels_h;

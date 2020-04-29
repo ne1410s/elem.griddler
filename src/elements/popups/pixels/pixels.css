@@ -2,9 +2,4 @@
   min-width: calc(50vw);
   max-width: calc(100vw - 3em);
   max-height: calc(100vh - 3em);
-  overflow-y: auto;
-}
-
-.back.open #zone {
-  pointer-events: all;
 }

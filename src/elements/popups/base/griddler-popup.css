@@ -16,6 +16,7 @@ input { font: inherit; pointer-events: all; }
 #errors ul { padding-left: 2em; }
 #buttons { text-align: right; margin: .5em; }
 
+#zone { pointer-events: all; overflow-y: auto; }
 #zone input.err { border-color: #f00; }
 #zone input {
   border: 2px solid #eee;
