@@ -148,6 +148,7 @@ export class Griddler extends CustomElementBase {
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$root.find('#btnUndo').on('click', () => this.undoOne());
     this.$root.find('#btnClear').on('click', () => this.clear());
+    this.$root.find('#btnHint').on('click', () => this.hint());
     this.$root.find('#btnSolve').on('click', () => this.solve());
     this.$root.find('#btnDownload').on('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
     this.$root.find('#btnPrint').on('click', () => window.print());
@@ -209,6 +210,12 @@ export class Griddler extends CustomElementBase {
       XGrid.WipeCells(this._grid);
       this.refresh();
     }
+  }
+
+  /** Provides a hint for the next solving action. */
+  hint() {
+    const result = Grid.load(this._grid).hint();
+    console.log(result);
   }
 
   /** Attempts to solve the grid. */

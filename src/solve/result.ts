@@ -16,7 +16,7 @@ export class SolveResult {
   }
 }
 
-export class HintResult {
-  constructor(
-    public readonly test: any) { }
+export interface HintResult {
+  setType: string;
+  setIndex: number;
 }

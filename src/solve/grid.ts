@@ -77,7 +77,13 @@ export class Grid {
     const allCols = Utils.FillArray(this.width, () => 0).map((x, i) => i);
     const allRows = Utils.FillArray(this.height, () => 0).map((x, i) => i);
     const colsrows = this.solveSetsRecursively([allCols, allRows], true);
-    return new HintResult(colsrows);
+    let result: HintResult = null;
+    if (colsrows) {
+      const pass = colsrows[0];
+      result = { setType: SetType[pass.crType], setIndex: pass.crIdx[0] };
+    }
+
+    return result;
   }
 
   public solve(): SolveResult {
