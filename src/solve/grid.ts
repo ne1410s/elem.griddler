@@ -73,14 +73,14 @@ export class Grid {
       .map(() => Utils.FillArray(this.height, () => CellState.Blank));
   }
 
-  public hint(): HintResult {
+  public nextHint(): HintResult {
     const allCols = Utils.FillArray(this.width, () => 0).map((x, i) => i);
     const allRows = Utils.FillArray(this.height, () => 0).map((x, i) => i);
     const colsrows = this.solveSetsRecursively([allCols, allRows], true);
     let result: HintResult = null;
     if (colsrows) {
-      const pass = colsrows[0];
-      result = { setType: SetType[pass.crType], setIndex: pass.crIdx[0] };
+      const pass = colsrows[263 % colsrows.length];
+      result = { type: SetType[pass.type], idx: pass.idx };
     }
 
     return result;
@@ -144,7 +144,10 @@ export class Grid {
         const cr = us.solve();
         cr.marks.forEach(m => this.setState(us.type, us.index, m, CellState.Marked));
         cr.fills.forEach(f => this.setState(us.type, us.index, f, CellState.Filled));
-        return { crIdx: cr.marks.concat(cr.fills), crType: us.altType };
+        return {
+          type: us.type, idx: us.index, // for hints
+          crType: us.altType, crIdx: cr.marks.concat(cr.fills) // for solving
+        };
       })
       .filter(obj => obj.crIdx.length !== 0);
 

@@ -214,7 +214,7 @@ export class Griddler extends CustomElementBase {
 
   /** Provides a hint for the next solving action. */
   hint() {
-    const result = Grid.load(this._grid).hint();
+    const result = Grid.load(this._grid).nextHint();
     console.log(result);
   }
 

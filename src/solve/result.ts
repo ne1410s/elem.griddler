@@ -17,6 +17,6 @@ export class SolveResult {
 }
 
 export interface HintResult {
-  setType: string;
-  setIndex: number;
+  type: string;
+  idx: number;
 }
