@@ -1,4 +1,5 @@
 import { Utils } from '../utils';
+import { SolveResult } from '../solve/result';
 
 export abstract class XGrid {
 
@@ -48,6 +49,37 @@ export abstract class XGrid {
       c: plain.columns.map(c => (c.labels || []).join('.')).join('|'),
       r: plain.rows.map(r => `${(r.labels || []).join('.')}${derive(r)}`).join('|'),
     };
+  }
+
+  public static OverlayResult(ref: ImageData, result: SolveResult) {
+    const palette = {
+      fill: {
+        good: { r: 0, g: 0, b: 0, a: 255 },
+        bad: { r: 255, g: 0, b: 0, a: 255 }
+      },
+      mark: {
+        good: { r: 0, g: 0, b: 255, a: 32 },
+        bad: { r: 127, g: 0, b: 0, a: 255 }
+      }
+    };
+
+    const plain = result.solved ? result.grid : result.brokenGrid;
+    for (let x = 3; x < ref.data.length; x += 4) {
+      const rowNum = Math.floor(((x - 3) / 4) / ref.width);
+      const colNum = ((x - 3) / 4) % ref.width;
+      const state = plain.rows[rowNum].cells[colNum];
+      const paletteState = state === 1 ? palette.fill : (state === 2 && !result.solved) ? palette.mark : null;
+
+      if (paletteState) { // blocks and (unsolved) marks
+        const wasBlock = ref.data[x - 3] === 0 && ref.data[x - 2] === 0 && ref.data[x - 1] === 0;
+        const stateRef = (state === 1 && wasBlock) || (state === 2 && !wasBlock) ? 'good' : 'bad';
+        const rgba = paletteState[stateRef];
+        ref.data[x - 3] = rgba.r;
+        ref.data[x - 2] = rgba.g
+        ref.data[x - 1] = rgba.b;
+        ref.data[x] = rgba.a;
+      }
+    }
   }
 
   public static WipeCells(plain: PlainGrid): void {

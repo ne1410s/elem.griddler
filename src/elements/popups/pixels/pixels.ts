@@ -4,49 +4,49 @@ import { PlainGrid, XGrid } from '../../../models/grid';
 import markupUrl from './pixels.html';
 import stylesUrl from './pixels.css';
 import { Grid } from '../../../solve/grid';
+import { Utils } from '../../../utils';
 
 export class PixelsPopup extends GriddlerPopupBase {
 
+  private _labelGrid: PlainGrid;
+  public get labelGrid(): PlainGrid {
+    return this._labelGrid;
+  }
+
+  private pxl8r: Pxl8r;
   private renderData: ImageData;
 
-  public get plainGrid(): PlainGrid {
-    return this.renderData ? XGrid.AsPlain(this.renderData) : null;
-  }
-
-  public get labelGrid(): PlainGrid {
-    const grid = this.plainGrid;
-    if (grid != null) {
-      XGrid.ScrapeLabels(grid);
-      XGrid.WipeCells(grid);
-    }
-
-    return grid;
-  }
-
-  constructor() { 
+  constructor() {
 
     super(markupUrl, stylesUrl);
 
     this.titleText = 'Pixels';
-    this.$zone.first('ne14-pxl8r')
-      .on('render', (e: CustomEvent) => this.renderData = e.detail);
+    this.pxl8r = this.$zone.first('ne14-pxl8r')
+      .on('render', Utils.Debounce((e: CustomEvent) => this.onControlRender(e), 100))
+      .get(0) as Pxl8r;
   }
 
   protected renderZone() {
-    //...
+    // ...
   }
 
-  protected validate(): boolean {
-    const test = this.labelGrid;
-    let retVal = false;
-    if (test != null) {
-      const result = Grid.load(test).solve();
-      if (!result.solved) {
-        // TODO: Feedback for UI - e.g. cell state
-        console.warn('Feed this back:', result);
-      }
+  protected validate = () => this.visualTest();
 
+  private onControlRender(event: CustomEvent) {
+    this.renderData = event.detail;
+    this._labelGrid = XGrid.AsPlain(this.renderData);
+    XGrid.ScrapeLabels(this._labelGrid);
+    XGrid.WipeCells(this._labelGrid);
+    this.visualTest();
+  }
+
+  private visualTest(): boolean {
+    let retVal = false;
+    if (this._labelGrid != null) {
+      const result = Grid.load(this._labelGrid).solve();
       retVal = result.solved;
+      XGrid.OverlayResult(this.renderData, result);
+      this.pxl8r.overlay(this.renderData);
     }
 
     return retVal;
