@@ -333,13 +333,6 @@ export class Griddler extends CustomElementBase {
     return Math.max(min, Math.min(max, rnd));
   }
 
-  private prepareMenu(coords: GridContextPoint) {
-    this.$menu.empty();
-    this.$menu.append({ tag: 'li', text: `Column ${coords.x}` });
-    
-    (this.$menu.get(0) as ContextMenu).reload();
-  }
-
   private read(file: File) {
     if (file == null) return;
     const reader = new FileReader();
@@ -572,6 +565,21 @@ export class Griddler extends CustomElementBase {
       if (type === 'rows') this.setRowLabels(index, next);
       else this.setColumnLabels(index, next);
     }
+  }
+
+  private prepareMenu(coords: GridContextPoint) {
+    this.$menu.empty();
+
+    if (coords.x != null) this.$menu
+      .appendIn({tag: 'li', text: `Edit Column ${coords.x + 1} Labels` })
+      .on('click', () => this.showLabelModal('columns', coords.x));
+
+    if (coords.y != null) this.$menu
+      .appendIn({tag: 'li', text: `Edit Row ${coords.y + 1} Labels` })
+      .on('click', () => this.showLabelModal('rows', coords.y));
+
+    
+    (this.$menu.get(0) as ContextMenu).reload();
   }
 }
 
