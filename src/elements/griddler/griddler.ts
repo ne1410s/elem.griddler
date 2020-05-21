@@ -81,6 +81,7 @@ export class Griddler extends CustomElementBase {
 
     this.$root = q(this.root);
     this.$menu = this.$root.first('ne14-menu');
+    this.prepareMenuStatic();
 
     this.$grid = this.$root.first('canvas#grid');
     this._ctxGrid = (this.$grid.get(0) as HTMLCanvasElement).getContext('2d');
@@ -109,7 +110,7 @@ export class Griddler extends CustomElementBase {
     this.$grid.on('mousedown', (e: MouseEvent) => {
       const coords = this.getCoords(e, true);
       if (e.which === 3) {
-        this.prepareMenu(coords);
+        this.prepareMenuDynamic(coords);
       } else {
         this._downCoords = coords;
         this.highlight();
@@ -567,19 +568,31 @@ export class Griddler extends CustomElementBase {
     }
   }
 
-  private prepareMenu(coords: GridContextPoint) {
-    this.$menu.empty();
+  private prepareMenuStatic() {
 
-    if (coords.x != null) this.$menu
-      .appendIn({tag: 'li', text: `Edit Column ${coords.x + 1} Labels` })
-      .on('click', () => this.showLabelModal('columns', coords.x));
+    this.$menu
+      .find('li.labels')
+      .on('click', e => {
+        const elem = e.target as Element;
+        const setElem = elem.closest('.set');
+        const idx = parseInt(setElem.getAttribute('data-idx'));
+        this.showLabelModal(setElem.id as any, idx);
+      })
+  }
 
-    if (coords.y != null) this.$menu
-      .appendIn({tag: 'li', text: `Edit Row ${coords.y + 1} Labels` })
-      .on('click', () => this.showLabelModal('rows', coords.y));
+  private prepareMenuDynamic(coords: GridContextPoint) {
 
-    
-    (this.$menu.get(0) as ContextMenu).reload();
+    // Update the columns set index and toggle
+    this.$menu
+      .first('#columns.set')
+      .attr('data-idx', `${coords.x}`)
+      .toggle('hidden', coords.x == null);
+
+    // Update the rows set index and toggle
+    this.$menu
+      .find('#rows.set')
+      .attr('data-idx', `${coords.y}`)
+      .toggle('hidden', coords.y == null);
   }
 }
 
