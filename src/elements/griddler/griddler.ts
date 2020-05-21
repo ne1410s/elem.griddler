@@ -1,4 +1,5 @@
 import { CustomElementBase } from '@ne1410s/cust-elems';
+import { ContextMenu } from '@ne1410s/menu';
 import { q, ChainedQuery } from '@ne1410s/dom';
 
 import { Grid } from '../../solve/grid';
@@ -23,6 +24,7 @@ export class Griddler extends CustomElementBase {
   private readonly $root: ChainedQuery;
   private readonly $grid: ChainedQuery;
   private readonly $lite: ChainedQuery;
+  private readonly $menu: ChainedQuery;
   
   private readonly _ctxGrid: CanvasRenderingContext2D;
   private readonly _ctxLite: CanvasRenderingContext2D;
@@ -78,6 +80,7 @@ export class Griddler extends CustomElementBase {
     super(stylesUrl, markupUrl);
 
     this.$root = q(this.root);
+    this.$menu = this.$root.first('ne14-menu');
 
     this.$grid = this.$root.first('canvas#grid');
     this._ctxGrid = (this.$grid.get(0) as HTMLCanvasElement).getContext('2d');
@@ -100,12 +103,17 @@ export class Griddler extends CustomElementBase {
       
       // If ripe for the paintin'
       if ((isColDrag || isRowDrag) && moveCoords.state === 0) {
-        this.setState(moveCoords, this._downCoords.which === 'left' ? 1 : 2);
+        this.setState(moveCoords, this._downCoords.state);
       }
     });
     this.$grid.on('mousedown', (e: MouseEvent) => {
-      this._downCoords = this.getCoords(e, true);
-      this.highlight();
+      const coords = this.getCoords(e, true);
+      if (e.which === 3) {
+        this.prepareMenu(coords);
+      } else {
+        this._downCoords = coords;
+        this.highlight();
+      }
     });
     this.$grid.on('mouseup', (e: MouseEvent) => {
 
@@ -114,6 +122,7 @@ export class Griddler extends CustomElementBase {
       this.highlight(upCoords);
 
       if (this._downCoords) {
+
         if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
           if (upCoords.x != null && upCoords.y != null) { // cell
             let state: 0 | 1 | 2;
@@ -141,8 +150,6 @@ export class Griddler extends CustomElementBase {
       this.clearContext(this._ctxLite);
     });
     
-    this.$grid.on('contextmenu', event => event.preventDefault());
-
     this.$root.find('#btnSettings').on('click', () => this._settingsPopup.open());
     this.$root.find('#btnHistory').on('click', () => this.showHistoryModal());
     this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
@@ -326,6 +333,13 @@ export class Griddler extends CustomElementBase {
     return Math.max(min, Math.min(max, rnd));
   }
 
+  private prepareMenu(coords: GridContextPoint) {
+    this.$menu.empty();
+    this.$menu.append({ tag: 'li', text: `Column ${coords.x}` });
+    
+    (this.$menu.get(0) as ContextMenu).reload();
+  }
+
   private read(file: File) {
     if (file == null) return;
     const reader = new FileReader();
@@ -501,7 +515,7 @@ export class Griddler extends CustomElementBase {
       ...dims,
       x0: dims.x * this._size + Griddler.PIXEL_OFFSET,
       y0: dims.y * this._size + Griddler.PIXEL_OFFSET,
-      which: locator.which === 1 ? 'left' : 'right',
+      which: locator.which === 1 ? 'left' : locator.which === 0 ? null : 'right',
       state: this.getState(dims),
       snapshot: snapshot ? this.toString() : null,
     };
@@ -560,3 +574,5 @@ export class Griddler extends CustomElementBase {
     }
   }
 }
+
+export { ContextMenu };

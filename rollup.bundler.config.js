@@ -10,6 +10,7 @@ export default {
   external: [
     '@ne1410s/cust-elems',
     '@ne1410s/dom',
+    '@ne1410s/menu',
     '@ne1410s/popup',
     '@ne1410s/pxl8r',
   ],
