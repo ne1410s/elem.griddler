@@ -155,28 +155,6 @@ export class Griddler extends CustomElementBase {
       this.clearContext(this._ctxLite);
     });
     
-    this.$root.find('#btnSettings').on('click', () => this._settingsPopup.open());
-    this.$root.find('#btnHistory').on('click', () => this.showHistoryModal());
-    this.$root.find('#btnRedo').on('click', () => this.gotoHistory(this._historyIndex + 1));
-    this.$root.find('#btnUndo').on('click', () => this.undoOne());
-    this.$root.find('#btnClear').on('click', () => this.clear());
-    this.$root.find('#btnHint').on('click', () => this.hint());
-    this.$root.find('#btnSolve').on('click', () => this.solve());
-    this.$root.find('#btnDownload').on('click', () => Griddler.Download(this.imageDataUrl, 'My Grid.png'));
-    this.$root.find('#btnPrint').on('click', () => window.print());
-    this.$root.find('#btnExport').on('click', () => Griddler.Download(this.textDataUrl, 'My Grid.json'));
-    this.$root.find('#btnImport input').on('change', event => {
-      this.read((event.target as HTMLInputElement).files[0]);
-    });
-    this.$root.find('#btnPixels').on('click', () => this._pixelsPopup.open());
-    this.$root.find('#btnLabels').on('click', () => {
-      const prev = this.toString();
-      XGrid.ScrapeLabels(this._grid);
-      this.populateLabels();
-      if (prev !== this.toString()) {
-        this.addToHistory('scrape', prev);
-      }
-    });
     this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
     this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
@@ -357,16 +335,6 @@ export class Griddler extends CustomElementBase {
     this._historyIndex = this._history.push({ 
       date: new Date(), type, grid
     });
-    this.historyChanged();
-  }
-
-  private historyChanged(): void {
-    const btnHistory = this.root.querySelector('#btnHistory') as HTMLInputElement;
-    const btnUndo = this.root.querySelector('#btnUndo') as HTMLInputElement;
-    const btnRedo = this.root.querySelector('#btnRedo') as HTMLInputElement;
-    btnHistory.disabled = !this._history?.length;
-    btnUndo.disabled = this._historyIndex <= 0;
-    btnRedo.disabled = this._historyIndex >= this._history.length - 1;
   }
 
   private gotoHistory(newIndex: number): void {
@@ -375,7 +343,6 @@ export class Griddler extends CustomElementBase {
     if (historyItem) {
       this._historyIndex = newIndex;
       this.load(JSON.parse(historyItem.grid));
-      this.historyChanged();
     }
   }
 
@@ -573,11 +540,11 @@ export class Griddler extends CustomElementBase {
   }
 
   private handleMenuEvents() {
-
+    
     this.$menu.on('menuopen', () => setTimeout(() => this.highlight(this._menuCoords)));
     this.$menu.on('mouseup', e => e.stopPropagation());
     this.$menu.on('mouseleave', () => this.clearContext(this._ctxLite));
-
+    
     this.$menu.on('itemhover', (e: CustomEvent) => {
       const setNode = (e.detail.origin as HTMLElement).closest('li.set[id]');
       if (setNode && setNode.classList.contains('set')) {
@@ -590,12 +557,38 @@ export class Griddler extends CustomElementBase {
         this.highlight(this._menuCoords);
       }
     });
+    
+    this.$menu.find('#changes .undo').on('click', () => this.undoOne());
+    this.$menu.find('#changes .redo').on('click', () => this.gotoHistory(this._historyIndex + 1));
+    this.$menu.find('#changes .history').on('click', () => this.showHistoryModal());
 
-    this.$menu.find('li.labels').on('click', e => {
+    this.$menu.find('.set .labels').on('click', e => {
       const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
       const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
       this.showLabelModal(setType, setIndex);
     });
+
+    this.$menu.find('#grid .hint').on('click', () => this.hint());
+    this.$menu.find('#grid .solve').on('click', () => this.solve());
+    this.$menu.find('#grid .clear').on('click', () => this.clear());
+    this.$menu.find('#grid .spawn').on('click', () => {
+      const prev = this.toString();
+      XGrid.ScrapeLabels(this._grid);
+      this.populateLabels();
+      if (prev !== this.toString()) {
+        this.addToHistory('scrape', prev);
+      }
+    });
+
+    const fileElem = this.$menu.find('#import .json > [type=file]').get(0);
+    this.$menu.find('#import .json').on('click', () => (fileElem as HTMLElement).click());
+    this.$menu.find('#import .pixel').on('click', () => this._pixelsPopup.open());
+
+    this.$menu.find('#export .json').on('click', () => Griddler.Download(this.textDataUrl, 'grid.json'));
+    this.$menu.find('#export .image').on('click', () => Griddler.Download(this.imageDataUrl, 'grid.png'));
+    this.$menu.find('#export .print').on('click', () => window.print());
+    
+    this.$menu.find('#settings').on('click', () => this._settingsPopup.open());
   }
 
   private updateMenuContext() {
@@ -616,7 +609,12 @@ export class Griddler extends CustomElementBase {
       .toggle('hidden', coords.x == null || coords.y == null)
       .first('p').empty()
       .append(`<span>Cell (${coords.x + 1}, ${coords.y + 1})</span>`);
-  
+
+    this.$menu.first('#changes .undo').toggle('disabled', this._historyIndex <= 0);
+    this.$menu.first('#changes .redo').toggle('disabled', this._historyIndex >= this._history.length - 1);
+    this.$menu.first('#changes .history').toggle('disabled', !this._history?.length);
+    this.$menu.first('#changes').toggle('disabled', e => !e.querySelector('li:not(.disabled)'));
+
     // Reload for changes into shadow DOM
     (this.$menu.get(0) as ContextMenu).reload();
   }

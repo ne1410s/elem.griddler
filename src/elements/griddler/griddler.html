@@ -1,27 +1,16 @@
-<div class="control-zone">
-  <input id="btnSettings" type="button" value="settings"/>
-  <input id="btnHistory" type="button" value="history" disabled/>
-  <input id="btnUndo" type="button" value="&#x25c4;" disabled title="undo"/>
-  <input id="btnRedo" type="button" value="&#x25ba;" disabled title="redo"/>
-  <input id="btnClear" type="button" value="clear"/>
-  <input id="btnHint" type="button" value="hint"/>
-  <input id="btnSolve" type="button" value="solve"/>
-  <input id="btnDownload" type="button" value="download"/>
-  <input id="btnPrint" type="button" value="print"/>
-  <input id="btnExport" type="button" value="export"/>
-  <button>
-    <label id="btnImport">
-      <span>import</span>
-      <input type="file" accept=".grid,.json, application/json"/>
-    </label>
-  </button>
-  <input id="btnPixels" type="button" value="pixels"/>
-  <input id="btnLabels" type="button" value="labels"/>
-</div>
 <div class="grid-zone drop-zone">
   <canvas id="grid"></canvas>
   <canvas id="hilite"></canvas>
-  <ne14-menu>
+  <ne14-menu mode="dark">
+    <li id="changes">
+      <p>Change history</p>
+      <ul>
+        <li aria-keyshortcuts="Ctrl+Z" class="undo">Undo</li>
+        <li aria-keyshortcuts="Ctrl+Y" class="redo">Redo</li>
+        <li class="history">View log...</li>
+      </ul>
+    </li>
+    <li class="split"></li>
     <li id="cell">
       <p>Cell</p>
       <ul></ul>
@@ -29,19 +18,43 @@
     <li id="columns" class="set">
       <p>Column</p>
       <ul>
-        <li class="labels">Edit labels</li>
+        <li class="labels">Edit labels...</li>
       </ul>
     </li>
     <li id="rows" class="set">
       <p>Row</p>
       <ul>
-        <li class="labels">Edit labels</li>
+        <li class="labels">Edit labels...</li>
       </ul>
     </li>
-    <li class="splitter"></li>
     <li id="grid">
       <p>Grid</p>
-      <ul></ul>
+      <ul>
+        <li class="hint">Hint</li>
+        <li class="solve">Solve</li>
+        <li class="clear">Clear</li>
+        <li class="spawn">Spawn labels</li>
+      </ul>
     </li>
+    <li class="split"></li>
+    <li id="import">
+      <p>Import</p>
+      <ul>
+        <li class="json">
+          <p>File...</p>
+          <input type="file"/>
+        </li>
+        <li class="pixel">Image pixelator...</li>
+      </ul>
+    </li>
+    <li id="export">
+      <p>Export</p>
+      <ul>
+        <li class="json">As file</li>
+        <li class="image">As image</li>
+        <li aria-keyshortcuts="Ctrl+P" class="print">Print</li>
+      </ul>
+    </li>
+    <li id="settings">Settings...</li>
   </ne14-menu>
 </div>
