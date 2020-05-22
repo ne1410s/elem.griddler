@@ -81,7 +81,7 @@ export class Griddler extends CustomElementBase {
 
     this.$root = q(this.root);
     this.$menu = this.$root.first('ne14-menu');
-    this.prepareMenuStatic();
+    this.handleMenuItemClicks();
 
     this.$grid = this.$root.first('canvas#grid');
     this._ctxGrid = (this.$grid.get(0) as HTMLCanvasElement).getContext('2d');
@@ -110,7 +110,7 @@ export class Griddler extends CustomElementBase {
     this.$grid.on('mousedown', (e: MouseEvent) => {
       const coords = this.getCoords(e, true);
       if (e.which === 3) {
-        this.prepareMenuDynamic(coords);
+        this.updateMenuContext(coords);
       } else {
         this._downCoords = coords;
         this.highlight();
@@ -568,31 +568,51 @@ export class Griddler extends CustomElementBase {
     }
   }
 
-  private prepareMenuStatic() {
+  private getMenuIndexPoint(): Point {
+    const menuData = (this.$menu.get(0) as HTMLElement).dataset;
+    return {
+      x: parseInt(menuData.idxCol),
+      y: parseInt(menuData.idxRow),
+    }
+  }
 
+  private getMenuIndex(type: 'columns' | 'rows'): number {
+    const indexPoint = this.getMenuIndexPoint();
+    return type == 'columns' ? indexPoint.x : indexPoint.y;
+  }
+
+  private handleMenuItemClicks() {
     this.$menu
       .find('li.labels')
       .on('click', e => {
-        const elem = e.target as Element;
-        const setElem = elem.closest('.set');
-        const idx = parseInt(setElem.getAttribute('data-idx'));
-        this.showLabelModal(setElem.id as any, idx);
-      })
+        const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
+        const setIndex = this.getMenuIndex(setType);
+        this.showLabelModal(setType, setIndex);
+      });
   }
 
-  private prepareMenuDynamic(coords: GridContextPoint) {
+  private updateMenuContext(coords: GridContextPoint) {
+    
+    this.$menu.attr('data-idx-col', coords.x?.toString());
+    this.$menu.attr('data-idx-row', coords.y?.toString());
 
-    // Update the columns set index and toggle
-    this.$menu
-      .first('#columns.set')
-      .attr('data-idx', `${coords.x}`)
-      .toggle('hidden', coords.x == null);
+    this.$menu.first('#columns')
+      .toggle('hidden', coords.x == null)
+      .first('p').empty()
+      .append(`<span>Column ${coords.x}</span>`);
 
-    // Update the rows set index and toggle
-    this.$menu
-      .find('#rows.set')
-      .attr('data-idx', `${coords.y}`)
-      .toggle('hidden', coords.y == null);
+    this.$menu.first('#rows')
+      .toggle('hidden', coords.y == null)
+      .first('p').empty()
+      .append(`<span>Row ${coords.y}</span>`);
+
+    this.$menu.first('#cell')
+      .toggle('hidden', coords.x == null || coords.y == null)
+      .first('p').empty()
+      .append(`<span>Cell {${coords.x}, ${coords.y}}</span>`);
+  
+    // Reload for changes into shadow DOM
+    (this.$menu.get(0) as ContextMenu).reload();
   }
 }
 
