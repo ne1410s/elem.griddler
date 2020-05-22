@@ -49,7 +49,7 @@
   "dependencies": {
     "@ne1410s/cust-elems": "^0.1.1",
     "@ne1410s/dom": "^0.2.3",
-    "@ne1410s/menu": "0.0.1",
+    "@ne1410s/menu": "0.0.5",
     "@ne1410s/popup": "^0.2.1",
     "@ne1410s/pxl8r": "0.0.2"
   }

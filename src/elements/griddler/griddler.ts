@@ -35,6 +35,7 @@ export class Griddler extends CustomElementBase {
 
   private _size = config.cellSize.default * config.resolution;
   private _grid = XGrid.AsPlain({ x: config.gridSize.default, y: config.gridSize.default });
+  private _menuCoords: GridContextPoint;
   private _downCoords: GridContextPoint;
   private _history: GridEditHistory[] = [];
   private _historyIndex: number = 0;
@@ -81,7 +82,7 @@ export class Griddler extends CustomElementBase {
 
     this.$root = q(this.root);
     this.$menu = this.$root.first('ne14-menu');
-    this.handleMenuItemClicks();
+    this.handleMenuEvents();
 
     this.$grid = this.$root.first('canvas#grid');
     this._ctxGrid = (this.$grid.get(0) as HTMLCanvasElement).getContext('2d');
@@ -91,26 +92,29 @@ export class Griddler extends CustomElementBase {
     this._ctxLite = (this.$lite.get(0) as HTMLCanvasElement).getContext('2d');
     this._ctxLite.imageSmoothingEnabled = false;
 
-    this.$grid.on('mouseleave', () => { 
+    this.$grid.on('mouseleave', () => {
       if (!this._downCoords) this.clearContext(this._ctxLite);
     });
     this.$grid.on('mousemove', (e: MouseEvent) => {
       const moveCoords = this.getCoords(e);
-      
-      // Check for dragging on initial-cell
-      const isColDrag = this._downCoords?.x === moveCoords.x;
-      const isRowDrag = this._downCoords?.y === moveCoords.y;
       this.highlight(!this._downCoords ? moveCoords : null);
       
+      // Check for dragging on initiating sets
+      const isColDrag = this._downCoords?.x === moveCoords.x;
+      const isRowDrag = this._downCoords?.y === moveCoords.y;
+
       // If ripe for the paintin'
       if ((isColDrag || isRowDrag) && moveCoords.state === 0) {
-        this.setState(moveCoords, this._downCoords.state);
+
+        // Use initial state (or 0 -> 1 fill blanks)
+        this.setState(moveCoords, this._downCoords.state || 1);
       }
     });
     this.$grid.on('mousedown', (e: MouseEvent) => {
       const coords = this.getCoords(e, true);
       if (e.which === 3) {
-        this.updateMenuContext(coords);
+        this._menuCoords = coords;
+        this.updateMenuContext();
       } else {
         this._downCoords = coords;
         this.highlight();
@@ -568,48 +572,50 @@ export class Griddler extends CustomElementBase {
     }
   }
 
-  private getMenuIndexPoint(): Point {
-    const menuData = (this.$menu.get(0) as HTMLElement).dataset;
-    return {
-      x: parseInt(menuData.idxCol),
-      y: parseInt(menuData.idxRow),
-    }
+  private handleMenuEvents() {
+
+    this.$menu.on('menuopen', () => setTimeout(() => this.highlight(this._menuCoords)));
+    this.$menu.on('mouseup', e => e.stopPropagation());
+    this.$menu.on('mouseleave', () => this.clearContext(this._ctxLite));
+
+    this.$menu.on('itemhover', (e: CustomEvent) => {
+      const setNode = (e.detail.origin as HTMLElement).closest('li.set[id]');
+      if (setNode && setNode.classList.contains('set')) {
+        const coordsClone = JSON.parse(JSON.stringify(this._menuCoords)) as GridContextPoint;
+        const setType = setNode.id as 'columns' | 'rows';
+        if (setType == 'rows') delete coordsClone.x
+        else delete coordsClone.y;
+        this.highlight(coordsClone);
+      } else {
+        this.highlight(this._menuCoords);
+      }
+    });
+
+    this.$menu.find('li.labels').on('click', e => {
+      const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
+      const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
+      this.showLabelModal(setType, setIndex);
+    });
   }
 
-  private getMenuIndex(type: 'columns' | 'rows'): number {
-    const indexPoint = this.getMenuIndexPoint();
-    return type == 'columns' ? indexPoint.x : indexPoint.y;
-  }
+  private updateMenuContext() {
 
-  private handleMenuItemClicks() {
-    this.$menu
-      .find('li.labels')
-      .on('click', e => {
-        const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
-        const setIndex = this.getMenuIndex(setType);
-        this.showLabelModal(setType, setIndex);
-      });
-  }
-
-  private updateMenuContext(coords: GridContextPoint) {
-    
-    this.$menu.attr('data-idx-col', coords.x?.toString());
-    this.$menu.attr('data-idx-row', coords.y?.toString());
+    const coords = this._menuCoords;
 
     this.$menu.first('#columns')
       .toggle('hidden', coords.x == null)
       .first('p').empty()
-      .append(`<span>Column ${coords.x}</span>`);
+      .append(`<span>Column ${coords.x + 1}</span>`);
 
     this.$menu.first('#rows')
       .toggle('hidden', coords.y == null)
       .first('p').empty()
-      .append(`<span>Row ${coords.y}</span>`);
+      .append(`<span>Row ${coords.y + 1}</span>`);
 
     this.$menu.first('#cell')
       .toggle('hidden', coords.x == null || coords.y == null)
       .first('p').empty()
-      .append(`<span>Cell {${coords.x}, ${coords.y}}</span>`);
+      .append(`<span>Cell (${coords.x + 1}, ${coords.y + 1})</span>`);
   
     // Reload for changes into shadow DOM
     (this.$menu.get(0) as ContextMenu).reload();
