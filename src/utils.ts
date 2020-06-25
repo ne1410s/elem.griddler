@@ -1,9 +1,10 @@
 export class Utils {
-
   /** Returns a new array of the specified size filled with the specified value. */
   public static FillArray<T>(size: number, valuer: () => T): T[] {
     const retVal = new Array(size);
-    for (let i = 0; i < size; i++) { retVal[i] = valuer(); }
+    for (let i = 0; i < size; i++) {
+      retVal[i] = valuer();
+    }
     return retVal;
   }
 
@@ -15,9 +16,9 @@ export class Utils {
         if (active == null) func.call(this, args);
         active = true;
         const that = this;
-        setTimeout(() => { 
+        setTimeout(() => {
           active = !!func.call(that, args);
-          setTimeout(() => active = active || null, delay / 10);
+          setTimeout(() => (active = active || null), delay / 10);
         }, delay);
       }
     };

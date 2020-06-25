@@ -7,7 +7,6 @@ import { Grid } from '../../../solve/grid';
 import { Utils } from '../../../utils';
 
 export class PixelsPopup extends GriddlerPopupBase {
-
   private _labelGrid: PlainGrid;
   public get labelGrid(): PlainGrid {
     return this._labelGrid;
@@ -17,12 +16,15 @@ export class PixelsPopup extends GriddlerPopupBase {
   private renderData: ImageData;
 
   constructor() {
-
     super(markupUrl, stylesUrl);
 
     this.titleText = 'Pixels';
-    this.pxl8r = this.$zone.first('ne14-pxl8r')
-      .on('render', Utils.Debounce((e: CustomEvent) => this.onControlRender(e), 100))
+    this.pxl8r = this.$zone
+      .first('ne14-pxl8r')
+      .on(
+        'render',
+        Utils.Debounce((e: CustomEvent) => this.onControlRender(e), 100)
+      )
       .get(0) as Pxl8r;
   }
 

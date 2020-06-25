@@ -7,7 +7,6 @@ import { PlainGrid, PlainSet, PlainDataSet } from '../models/grid';
 
 /** A griddler grid. */
 export class Grid {
-
   public static load(gridObject: PlainGrid): Grid {
     const grid = new Grid(gridObject.columns.length, gridObject.rows.length);
     gridObject.columns.forEach((col: PlainSet, colIdx: number) => {
@@ -18,8 +17,8 @@ export class Grid {
       grid.setLabels(SetType.Row, rowIdx, row.labels);
       (row.cells || [])
         .map((cell: 0 | 1 | 2, cellIdx: number) => ({ oState: cell, idx: cellIdx }))
-        .filter(obj => obj.oState !== 0)
-        .forEach(obj => {
+        .filter((obj) => obj.oState !== 0)
+        .forEach((obj) => {
           const state = obj.oState === 1 ? CellState.Filled : CellState.Marked;
           grid.setState(SetType.Row, rowIdx, obj.idx, state);
         });
@@ -34,31 +33,32 @@ export class Grid {
   private _columnLabelCache: number[][];
 
   public get consoleRef(): string {
-    return this._rowLabelCache
-      .map((n, r) => this.getFullSet(SetType.Row, r).stateRef)
-      .join('\r\n');
+    return this._rowLabelCache.map((n, r) => this.getFullSet(SetType.Row, r).stateRef).join('\r\n');
   }
 
   public get unsolvedCellCount(): number {
     return this._cellCache
       .reduce((ac, cur) => ac.concat(cur), [])
-      .filter(state => state === CellState.Blank).length;
+      .filter((state) => state === CellState.Blank).length;
   }
 
   public get solved(): boolean {
     return !this._cellCache
       .reduce((ac, cur) => ac.concat(cur), [])
-      .some(state => state === CellState.Blank);
+      .some((state) => state === CellState.Blank);
   }
 
   public get gridObject(): PlainGrid {
     return {
-      columns: this._columnLabelCache.map((n, c) => ({ labels: this.getLabels(SetType.Column, c) })),
+      columns: this._columnLabelCache.map((n, c) => ({
+        labels: this.getLabels(SetType.Column, c),
+      })),
       rows: this._rowLabelCache.map((n, r) => {
         return {
           labels: this.getLabels(SetType.Row, r),
-          cells: this.getFullSet(SetType.Row, r).cells
-            .map(c => c === CellState.Marked ? 2 : CellState.Filled ? 1 : 0),
+          cells: this.getFullSet(SetType.Row, r).cells.map((c) =>
+            c === CellState.Marked ? 2 : CellState.Filled ? 1 : 0
+          ),
         };
       }),
     };
@@ -69,8 +69,9 @@ export class Grid {
     this.height = height;
     this._rowLabelCache = Utils.FillArray(this.height, () => []);
     this._columnLabelCache = Utils.FillArray(this.width, () => []);
-    this._cellCache = this._columnLabelCache
-      .map(() => Utils.FillArray(this.height, () => CellState.Blank));
+    this._cellCache = this._columnLabelCache.map(() =>
+      Utils.FillArray(this.height, () => CellState.Blank)
+    );
   }
 
   public nextHint(): HintResult {
@@ -96,15 +97,16 @@ export class Grid {
   }
 
   public setState(setType: SetType, setIndex: number, cellIndex: number, state: CellState): void {
-    if (setType === SetType.Row) { this._cellCache[cellIndex][setIndex] = state; }
-    else { this._cellCache[setIndex][cellIndex] = state; }
+    if (setType === SetType.Row) {
+      this._cellCache[cellIndex][setIndex] = state;
+    } else {
+      this._cellCache[setIndex][cellIndex] = state;
+    }
   }
 
   public setLabels(type: SetType, index: number, values: number[]): void {
     const setRef = `${SetType[type].substr(0, 3)} ${index}`;
-    const target = type === SetType.Row
-      ? this._rowLabelCache
-      : this._columnLabelCache;
+    const target = type === SetType.Row ? this._rowLabelCache : this._columnLabelCache;
 
     if (target[index] == null) {
       const msg = 'Not found';
@@ -123,44 +125,48 @@ export class Grid {
   }
 
   public getFullSet(type: SetType, index: number): FullSet {
-    const cells = type === SetType.Row
-      ? this._cellCache.map((val) => val[index])
-      : this._cellCache[index];
+    const cells =
+      type === SetType.Row ? this._cellCache.map((val) => val[index]) : this._cellCache[index];
     return new FullSet(0, type, index, cells, this.getLabels(type, index));
   }
 
   public getLabels(type: SetType, index: number): number[] {
-    return type === SetType.Row
-      ? this._rowLabelCache[index]
-      : this._columnLabelCache[index];
+    return type === SetType.Row ? this._rowLabelCache[index] : this._columnLabelCache[index];
   }
 
   private solveSetsRecursively(colsrows: [number[], number[]], shallow: boolean = false) {
     const allUnsolvedHintworthy = colsrows[0]
-      .map(c => this.getFullSet(SetType.Column, c))
-      .concat(colsrows[1].map(r => this.getFullSet(SetType.Row, r)))
-      .filter(set => !set.solved)
-      .map(us => {
+      .map((c) => this.getFullSet(SetType.Column, c))
+      .concat(colsrows[1].map((r) => this.getFullSet(SetType.Row, r)))
+      .filter((set) => !set.solved)
+      .map((us) => {
         const cr = us.solve();
-        cr.marks.forEach(m => this.setState(us.type, us.index, m, CellState.Marked));
-        cr.fills.forEach(f => this.setState(us.type, us.index, f, CellState.Filled));
+        cr.marks.forEach((m) => this.setState(us.type, us.index, m, CellState.Marked));
+        cr.fills.forEach((f) => this.setState(us.type, us.index, f, CellState.Filled));
         return {
-          type: us.type, idx: us.index, // for hints
-          crType: us.altType, crIdx: cr.marks.concat(cr.fills) // for solving
+          type: us.type,
+          idx: us.index, // for hints
+          crType: us.altType,
+          crIdx: cr.marks.concat(cr.fills), // for solving
         };
       })
-      .filter(obj => obj.crIdx.length !== 0);
+      .filter((obj) => obj.crIdx.length !== 0);
 
     if (shallow) {
       return allUnsolvedHintworthy;
     }
 
     const allUnsolved = allUnsolvedHintworthy
-      .reduce((ac, obj) => {
-        ac[obj.crType].push(...obj.crIdx);
-        return ac;
-      }, [[], []] as [number[], number[]])
-      .map(arr => arr.sort((a, b) => a < b ? -1 : a > b ? 1 : 0).filter((n, i, x) => !i || n !== x[i - 1]));
+      .reduce(
+        (ac, obj) => {
+          ac[obj.crType].push(...obj.crIdx);
+          return ac;
+        },
+        [[], []] as [number[], number[]]
+      )
+      .map((arr) =>
+        arr.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).filter((n, i, x) => !i || n !== x[i - 1])
+      );
 
     if (allUnsolved[0].length + allUnsolved[1].length !== 0) {
       this.solveSetsRecursively([allUnsolved[0], allUnsolved[1]]);

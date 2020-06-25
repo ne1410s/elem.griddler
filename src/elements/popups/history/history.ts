@@ -5,7 +5,6 @@ import markupUrl from './history.html';
 import stylesUrl from './history.css';
 
 export class HistoryPopup extends GriddlerPopupBase {
-
   historyItems: GridEditHistory[];
   historyIndex: number;
 
@@ -15,8 +14,7 @@ export class HistoryPopup extends GriddlerPopupBase {
   }
 
   protected renderZone() {
-    
-    const $table = this.$zone 
+    const $table = this.$zone
       .first('.table')
       .empty()
       .append('<div class="header row"><p>Type</p><p>Date</p></div>');

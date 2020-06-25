@@ -18,13 +18,13 @@ export default {
       '@ne1410s/menu': 'ne_menu',
       '@ne1410s/popup': 'ne_pop',
       '@ne1410s/pxl8r': 'ne_pxl8r',
-    }
+    },
   },
   plugins: [
     resolve(), // find external modules
     commonjs(), // convert external modules to ES modules
     typescript(),
     json(),
-    url({ include: ['src/**/*.css', 'src/**/*.html'] })
-  ]
+    url({ include: ['src/**/*.css', 'src/**/*.html'] }),
+  ],
 };

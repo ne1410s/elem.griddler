@@ -1,2 +1,6 @@
-.table .row { display: flex; }
-.table .row.selected { background-color: #88eecc; }
+.table .row {
+  display: flex;
+}
+.table .row.selected {
+  background-color: #88eecc;
+}

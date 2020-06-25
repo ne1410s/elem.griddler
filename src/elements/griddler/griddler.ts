@@ -16,16 +16,15 @@ import markupUrl from './griddler.html';
 import stylesUrl from './griddler.css';
 
 export class Griddler extends CustomElementBase {
-
   public static observedAttributes = ['cols', 'rows', 'size'];
 
   private static readonly PIXEL_OFFSET = config.resolution / 2;
-  
+
   private readonly $root: ChainedQuery;
   private readonly $grid: ChainedQuery;
   private readonly $lite: ChainedQuery;
   private readonly $menu: ChainedQuery;
-  
+
   private readonly _ctxGrid: CanvasRenderingContext2D;
   private readonly _ctxLite: CanvasRenderingContext2D;
   private readonly _settingsPopup = new SettingsPopup();
@@ -39,29 +38,37 @@ export class Griddler extends CustomElementBase {
   private _downCoords: GridContextPoint;
   private _history: GridEditHistory[] = [];
   private _historyIndex: number = 0;
-  private _fontSize = this._size * .55;
+  private _fontSize = this._size * 0.55;
 
-  get totalColumns(): number { return this._grid.columns.length; }
-  get totalRows(): number { return this._grid.rows.length; }
+  get totalColumns(): number {
+    return this._grid.columns.length;
+  }
+  get totalRows(): number {
+    return this._grid.rows.length;
+  }
 
-  get totalWidth(): number { return (this.$grid.elements[0] as HTMLCanvasElement).width; }
+  get totalWidth(): number {
+    return (this.$grid.elements[0] as HTMLCanvasElement).width;
+  }
   set totalWidth(value: number) {
     this.$grid.prop('width', value);
     this.$lite.prop('width', value);
   }
 
-  get totalHeight(): number { return (this.$grid.elements[0] as HTMLCanvasElement).height; }
+  get totalHeight(): number {
+    return (this.$grid.elements[0] as HTMLCanvasElement).height;
+  }
   set totalHeight(value: number) {
     this.$grid.prop('height', value);
     this.$lite.prop('height', value);
   }
 
   get isBlank(): boolean {
-    return !this._grid.rows.some(r => r.cells && /[12]/.test(r.cells + ''));
+    return !this._grid.rows.some((r) => r.cells && /[12]/.test(r.cells + ''));
   }
 
   get isFull(): boolean {
-    return this._grid.rows.every(r => /^[12,]+$/.test(r.cells + ''));
+    return this._grid.rows.every((r) => /^[12,]+$/.test(r.cells + ''));
   }
 
   public toString(): string {
@@ -98,14 +105,13 @@ export class Griddler extends CustomElementBase {
     this.$grid.on('mousemove', (e: MouseEvent) => {
       const moveCoords = this.getCoords(e);
       this.highlight(!this._downCoords ? moveCoords : null);
-      
+
       // Check for dragging on initiating sets
       const isColDrag = this._downCoords?.x === moveCoords.x;
       const isRowDrag = this._downCoords?.y === moveCoords.y;
 
       // If ripe for the paintin'
       if ((isColDrag || isRowDrag) && moveCoords.state === 0) {
-
         // Use initial state (or 0 -> 1 fill blanks)
         this.setState(moveCoords, this._downCoords.state || 1);
       }
@@ -121,24 +127,26 @@ export class Griddler extends CustomElementBase {
       }
     });
     this.$grid.on('mouseup', (e: MouseEvent) => {
-
       e.stopImmediatePropagation();
       const upCoords = this.getCoords(e);
       this.highlight(upCoords);
 
       if (this._downCoords) {
-
         if (upCoords.x === this._downCoords.x && upCoords.y === this._downCoords.y) {
-          if (upCoords.x != null && upCoords.y != null) { // cell
+          if (upCoords.x != null && upCoords.y != null) {
+            // cell
             let state: 0 | 1 | 2;
             switch (this._downCoords.which) {
-              case 'left': state = (this._downCoords.state + 1) % 3 as 0 | 1 | 2; break;
-              case 'right': state = this._downCoords.state === 2 ? 0 : 2; break;
+              case 'left':
+                state = ((this._downCoords.state + 1) % 3) as 0 | 1 | 2;
+                break;
+              case 'right':
+                state = this._downCoords.state === 2 ? 0 : 2;
+                break;
             }
 
             this.setState(this._downCoords, state);
-          }
-          else if (upCoords.x != null) this.showLabelModal('columns', upCoords.x);
+          } else if (upCoords.x != null) this.showLabelModal('columns', upCoords.x);
           else if (upCoords.y != null) this.showLabelModal('rows', upCoords.y);
         }
 
@@ -154,8 +162,8 @@ export class Griddler extends CustomElementBase {
       this._downCoords = null;
       this.clearContext(this._ctxLite);
     });
-    
-    this.$root.find('.drop-zone').on('dragover', event => event.preventDefault());
+
+    this.$root.find('.drop-zone').on('dragover', (event) => event.preventDefault());
     this.$root.find('.drop-zone').on('drop', (event: DragEvent) => {
       event.preventDefault();
       this.read(event.dataTransfer.files[0]);
@@ -169,19 +177,15 @@ export class Griddler extends CustomElementBase {
       .appendIn(this._historyPopup)
       .on('confirmaccept', () => console.log('handle history change!'));
 
-    this.$root
-      .appendIn(this._editLabelPopup)
-      .on('confirmaccept', () => this.receiveLabelUpdate());
+    this.$root.appendIn(this._editLabelPopup).on('confirmaccept', () => this.receiveLabelUpdate());
 
-    this.$root
-      .appendIn(this._pixelsPopup)
-      .on('confirmaccept', () => {
-        const prevGrid = this.toString();
-        this.load(this._pixelsPopup.labelGrid);
-        if (this.toString() !== prevGrid) {
-          this.addToHistory('pixels', prevGrid);
-        }
-      });
+    this.$root.appendIn(this._pixelsPopup).on('confirmaccept', () => {
+      const prevGrid = this.toString();
+      this.load(this._pixelsPopup.labelGrid);
+      if (this.toString() !== prevGrid) {
+        this.addToHistory('pixels', prevGrid);
+      }
+    });
   }
 
   /**
@@ -226,8 +230,8 @@ export class Griddler extends CustomElementBase {
   refresh() {
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
-    const labels_w = Math.max(this._size * 2, grid_w * 2 / 5);
-    const labels_h = Math.max(this._size * 2, grid_h * 2 / 5);
+    const labels_w = Math.max(this._size * 2, (grid_w * 2) / 5);
+    const labels_h = Math.max(this._size * 2, (grid_h * 2) / 5);
 
     this.totalWidth = grid_w + labels_w;
     this.totalHeight = grid_h + labels_h;
@@ -248,7 +252,7 @@ export class Griddler extends CustomElementBase {
     }
     this._ctxGrid.strokeStyle = config.palette.minor;
     this._ctxGrid.lineWidth = config.resolution;
-    this._ctxGrid.stroke();    
+    this._ctxGrid.stroke();
     this._ctxGrid.closePath();
 
     this._ctxGrid.beginPath();
@@ -262,16 +266,16 @@ export class Griddler extends CustomElementBase {
     }
     this._ctxGrid.strokeStyle = config.palette.major;
     this._ctxGrid.lineWidth = config.resolution;
-    this._ctxGrid.stroke();    
+    this._ctxGrid.stroke();
     this._ctxGrid.closePath();
-    
+
     this.populate();
   }
 
   connectedCallback() {
     this.refresh();
   }
-  
+
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     switch (name) {
       case 'cols':
@@ -280,7 +284,8 @@ export class Griddler extends CustomElementBase {
           config.gridSize.default,
           config.gridSize.step,
           config.gridSize.min,
-          config.gridSize.max);
+          config.gridSize.max
+        );
         this.load(XGrid.AsPlain({ x: totalColumns, y: this.totalRows }));
         break;
       case 'rows':
@@ -289,7 +294,8 @@ export class Griddler extends CustomElementBase {
           config.gridSize.default,
           config.gridSize.step,
           config.gridSize.min,
-          config.gridSize.max);
+          config.gridSize.max
+        );
         this.load(XGrid.AsPlain({ x: this.totalColumns, y: totalRows }));
         break;
       case 'size':
@@ -298,7 +304,8 @@ export class Griddler extends CustomElementBase {
           config.cellSize.default * config.resolution,
           config.cellSize.step * config.resolution,
           config.cellSize.min * config.resolution,
-          config.cellSize.max * config.resolution);
+          config.cellSize.max * config.resolution
+        );
         break;
     }
   }
@@ -310,8 +317,8 @@ export class Griddler extends CustomElementBase {
     tempLink.click();
   }
 
-  private static Round(val: string|number, def: number, to: number, min: number, max: number) {
-    val = parseInt(`${val}`)
+  private static Round(val: string | number, def: number, to: number, min: number, max: number) {
+    val = parseInt(`${val}`);
     const rnd = to * Math.round((isNaN(val) ? def : val) / to);
     return Math.max(min, Math.min(max, rnd));
   }
@@ -319,21 +326,23 @@ export class Griddler extends CustomElementBase {
   private read(file: File) {
     if (file == null) return;
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = (e) => {
       const current = this.toString();
       const loaded = e.target.result as string;
       if (loaded !== current) {
         this.load(JSON.parse(loaded));
         this.addToHistory('load', current);
       }
-    }
+    };
     reader.readAsText(file);
   }
 
   private addToHistory(type: string, grid: string): void {
     this._history.splice(this._historyIndex);
-    this._historyIndex = this._history.push({ 
-      date: new Date(), type, grid
+    this._historyIndex = this._history.push({
+      date: new Date(),
+      type,
+      grid,
     });
   }
 
@@ -347,7 +356,7 @@ export class Griddler extends CustomElementBase {
   }
 
   private undoOne(): void {
-    if (this._historyIndex === this._history.length) {  
+    if (this._historyIndex === this._history.length) {
       const curr = this.toString();
       if (curr !== this._history[this._historyIndex]?.grid) {
         this.addToHistory('undo', curr);
@@ -359,8 +368,7 @@ export class Griddler extends CustomElementBase {
   }
 
   private getState(point: Point): 0 | 1 | 2 {
-    return point.x == null || point.y == null ? null
-      : this._grid.rows[point.y].cells[point.x];
+    return point.x == null || point.y == null ? null : this._grid.rows[point.y].cells[point.x];
   }
 
   private setState(point: GridContextPoint, state: 0 | 1 | 2): void {
@@ -374,8 +382,12 @@ export class Griddler extends CustomElementBase {
         this._ctxGrid.fill();
         this._ctxGrid.beginPath();
         switch (state) {
-          case 1: this.setCell(point.x, point.y); break;
-          case 2: this.markCell(point.x, point.y); break;
+          case 1:
+            this.setCell(point.x, point.y);
+            break;
+          case 2:
+            this.markCell(point.x, point.y);
+            break;
         }
         this._ctxGrid.fillStyle = config.palette.cells;
         this._ctxGrid.fill();
@@ -388,8 +400,8 @@ export class Griddler extends CustomElementBase {
   }
 
   private markCell(ci: number, ri: number) {
-    const x0 = ci * this._size + Griddler.PIXEL_OFFSET + (this._size / 2);
-    const y0 = ri * this._size + Griddler.PIXEL_OFFSET + (this._size / 2);
+    const x0 = ci * this._size + Griddler.PIXEL_OFFSET + this._size / 2;
+    const y0 = ri * this._size + Griddler.PIXEL_OFFSET + this._size / 2;
     this._ctxGrid.moveTo(x0, y0);
     this._ctxGrid.arc(x0, y0, this._size / 8, 0, 2 * Math.PI);
   }
@@ -400,7 +412,8 @@ export class Griddler extends CustomElementBase {
       ci * this._size + buffer,
       ri * this._size + buffer,
       this._size - buffer,
-      this._size - buffer);
+      this._size - buffer
+    );
   }
 
   private populate() {
@@ -411,44 +424,49 @@ export class Griddler extends CustomElementBase {
   private populateLabels() {
     this._ctxGrid.font = `${this._fontSize}px Times New Roman`;
     this._ctxGrid.fillStyle = config.palette.label;
-    
+
     const grid_w = this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
     this._ctxGrid.clearRect(grid_w, 0, this.totalWidth, this.totalHeight);
     this._grid.rows
       .map((row, idx) => ({ labels: row.labels, idx }))
-      .filter(set => set.labels && set.labels.length > 0)
-      .forEach(set => this.setRowLabels(set.idx, set.labels, grid_w));
-      
+      .filter((set) => set.labels && set.labels.length > 0)
+      .forEach((set) => this.setRowLabels(set.idx, set.labels, grid_w));
+
     const grid_h = this.totalRows * this._size + Griddler.PIXEL_OFFSET;
     this._ctxGrid.clearRect(0, grid_h, this.totalWidth, this.totalHeight);
     this._grid.columns
       .map((col, idx) => ({ labels: col.labels, idx }))
-      .filter(set => set.labels && set.labels.length > 0)
-      .forEach(set => this.setColumnLabels(set.idx, set.labels, grid_h));
+      .filter((set) => set.labels && set.labels.length > 0)
+      .forEach((set) => this.setColumnLabels(set.idx, set.labels, grid_h));
   }
 
   private populateStates() {
     this._ctxGrid.beginPath();
     this._grid.rows
       .map((row, idx) => ({ cells: row.cells, idx }))
-      .forEach(row => (row.cells || [])
-        .map((state, idx) => ({ state, idx }))
-        .forEach(cell => {
-          switch (cell.state) {
-            case 1: this.setCell(cell.idx, row.idx); break;
-            case 2: this.markCell(cell.idx, row.idx); break;
-          }
-        })
+      .forEach((row) =>
+        (row.cells || [])
+          .map((state, idx) => ({ state, idx }))
+          .forEach((cell) => {
+            switch (cell.state) {
+              case 1:
+                this.setCell(cell.idx, row.idx);
+                break;
+              case 2:
+                this.markCell(cell.idx, row.idx);
+                break;
+            }
+          })
       );
     this._ctxGrid.fillStyle = config.palette.cells;
     this._ctxGrid.fill();
   }
 
-  private setRowLabels(idx: number, labels: number[], grid_w?: number) {  
+  private setRowLabels(idx: number, labels: number[], grid_w?: number) {
     const isBulk = !!grid_w;
     grid_w = grid_w || this.totalColumns * this._size + Griddler.PIXEL_OFFSET;
-    const x = grid_w + (this._fontSize / 2);
-    const y = idx * this._size + (this._size / 2) + (this._fontSize / 2);
+    const x = grid_w + this._fontSize / 2;
+    const y = idx * this._size + this._size / 2 + this._fontSize / 2;
     this._ctxGrid.textAlign = 'left';
     if (!isBulk) this._ctxGrid.clearRect(x, idx * this._size, this.totalWidth, this._size);
     this._ctxGrid.fillText(labels.join(' . '), x, y);
@@ -457,11 +475,11 @@ export class Griddler extends CustomElementBase {
   private setColumnLabels(idx: number, labels: number[], grid_h?: number) {
     const isBulk = !!grid_h;
     grid_h = grid_h || this.totalRows * this._size + Griddler.PIXEL_OFFSET;
-    const x = idx * this._size + (this._size / 2) + 2;
+    const x = idx * this._size + this._size / 2 + 2;
     this._ctxGrid.textAlign = 'center';
-    if (!isBulk) this._ctxGrid.clearRect(idx * this._size, grid_h, this._size, this.totalHeight)
+    if (!isBulk) this._ctxGrid.clearRect(idx * this._size, grid_h, this._size, this.totalHeight);
     labels.forEach((label, idx) => {
-      this._ctxGrid.fillText(label + '', x, grid_h + ((this._fontSize * 1.2) * (idx + 1.2)));
+      this._ctxGrid.fillText(label + '', x, grid_h + this._fontSize * 1.2 * (idx + 1.2));
     });
   }
 
@@ -469,14 +487,29 @@ export class Griddler extends CustomElementBase {
     context.clearRect(0, 0, this.totalWidth, this.totalHeight);
   }
 
-  private getCoords(locator: { offsetX: number, offsetY: number, which: number }, snapshot = false): GridContextPoint {
-    const ci = Griddler.Round(locator.offsetX * config.resolution / this._size, 0, 1, 0, this.totalColumns);
-    const ri = Griddler.Round(locator.offsetY * config.resolution / this._size, 0, 1, 0, this.totalRows);
+  private getCoords(
+    locator: { offsetX: number; offsetY: number; which: number },
+    snapshot = false
+  ): GridContextPoint {
+    const ci = Griddler.Round(
+      (locator.offsetX * config.resolution) / this._size,
+      0,
+      1,
+      0,
+      this.totalColumns
+    );
+    const ri = Griddler.Round(
+      (locator.offsetY * config.resolution) / this._size,
+      0,
+      1,
+      0,
+      this.totalRows
+    );
     const dims = {
       x: ci === this.totalColumns ? null : ci,
       y: ri === this.totalRows ? null : ri,
-    }
-    return { 
+    };
+    return {
       ...dims,
       x0: dims.x * this._size + Griddler.PIXEL_OFFSET,
       y0: dims.y * this._size + Griddler.PIXEL_OFFSET,
@@ -488,12 +521,14 @@ export class Griddler extends CustomElementBase {
 
   private getShade(state: number): string {
     switch (state) {
-      case -1: return config.hilite.default;
-      case 2: return config.hilite.marking;
+      case -1:
+        return config.hilite.default;
+      case 2:
+        return config.hilite.marking;
       default:
         return config.hilite.filling;
     }
-  } 
+  }
 
   private highlight(coords?: GridContextPoint) {
     this.clearContext(this._ctxLite);
@@ -508,7 +543,8 @@ export class Griddler extends CustomElementBase {
         coords.x0 + buffer,
         coords.y0 + buffer,
         this._size - 2 * buffer,
-        this._size - 2 * buffer);
+        this._size - 2 * buffer
+      );
     }
   }
 
@@ -540,29 +576,28 @@ export class Griddler extends CustomElementBase {
   }
 
   private handleMenuEvents() {
-    
     this.$menu.on('menuopen', () => setTimeout(() => this.highlight(this._menuCoords)));
-    this.$menu.on('mouseup', e => e.stopPropagation());
+    this.$menu.on('mouseup', (e) => e.stopPropagation());
     this.$menu.on('mouseleave', () => this.clearContext(this._ctxLite));
-    
+
     this.$menu.on('itemhover', (e: CustomEvent) => {
       const setNode = (e.detail.origin as HTMLElement).closest('li.set[id]');
       if (setNode && setNode.classList.contains('set')) {
         const coordsClone = JSON.parse(JSON.stringify(this._menuCoords)) as GridContextPoint;
         const setType = setNode.id as 'columns' | 'rows';
-        if (setType == 'rows') delete coordsClone.x
+        if (setType == 'rows') delete coordsClone.x;
         else delete coordsClone.y;
         this.highlight(coordsClone);
       } else {
         this.highlight(this._menuCoords);
       }
     });
-    
+
     this.$menu.find('#changes .undo').on('click', () => this.undoOne());
     this.$menu.find('#changes .redo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$menu.find('#changes .history').on('click', () => this.showHistoryModal());
 
-    this.$menu.find('.set .labels').on('click', e => {
+    this.$menu.find('.set .labels').on('click', (e) => {
       const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
       const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
       this.showLabelModal(setType, setIndex);
@@ -584,36 +619,47 @@ export class Griddler extends CustomElementBase {
     this.$menu.find('#import .json').on('click', () => (fileElem as HTMLElement).click());
     this.$menu.find('#import .pixel').on('click', () => this._pixelsPopup.open());
 
-    this.$menu.find('#export .json').on('click', () => Griddler.Download(this.textDataUrl, 'grid.json'));
-    this.$menu.find('#export .image').on('click', () => Griddler.Download(this.imageDataUrl, 'grid.png'));
+    this.$menu
+      .find('#export .json')
+      .on('click', () => Griddler.Download(this.textDataUrl, 'grid.json'));
+    this.$menu
+      .find('#export .image')
+      .on('click', () => Griddler.Download(this.imageDataUrl, 'grid.png'));
     this.$menu.find('#export .print').on('click', () => window.print());
-    
+
     this.$menu.find('#settings').on('click', () => this._settingsPopup.open());
   }
 
   private updateMenuContext() {
-
     const coords = this._menuCoords;
 
-    this.$menu.first('#columns')
+    this.$menu
+      .first('#columns')
       .toggle('hidden', coords.x == null)
-      .first('p').empty()
+      .first('p')
+      .empty()
       .append(`<span>Column ${coords.x + 1}</span>`);
 
-    this.$menu.first('#rows')
+    this.$menu
+      .first('#rows')
       .toggle('hidden', coords.y == null)
-      .first('p').empty()
+      .first('p')
+      .empty()
       .append(`<span>Row ${coords.y + 1}</span>`);
 
-    this.$menu.first('#cell')
+    this.$menu
+      .first('#cell')
       .toggle('hidden', coords.x == null || coords.y == null)
-      .first('p').empty()
+      .first('p')
+      .empty()
       .append(`<span>Cell (${coords.x + 1}, ${coords.y + 1})</span>`);
 
     this.$menu.first('#changes .undo').toggle('disabled', this._historyIndex <= 0);
-    this.$menu.first('#changes .redo').toggle('disabled', this._historyIndex >= this._history.length - 1);
+    this.$menu
+      .first('#changes .redo')
+      .toggle('disabled', this._historyIndex >= this._history.length - 1);
     this.$menu.first('#changes .history').toggle('disabled', !this._history?.length);
-    this.$menu.first('#changes').toggle('disabled', e => !e.querySelector('li:not(.disabled)'));
+    this.$menu.first('#changes').toggle('disabled', (e) => !e.querySelector('li:not(.disabled)'));
 
     // Reload for changes into shadow DOM
     (this.$menu.get(0) as ContextMenu).reload();

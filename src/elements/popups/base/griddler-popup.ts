@@ -6,7 +6,6 @@ import stylesUrl from './griddler-popup.css';
 import { QuickParam } from '@ne1410s/dom/dist/models';
 
 export abstract class GriddlerPopupBase extends Popup {
-  
   protected abstract renderZone(): void;
   protected abstract validate(): boolean;
 
@@ -14,12 +13,7 @@ export abstract class GriddlerPopupBase extends Popup {
   protected $body: ChainedQuery;
   protected dirty: boolean;
 
-  constructor(
-      zoneMarkupUrl?: string,
-      moreStylesUrl?: string,
-      move = true,
-      resize = true) {
-
+  constructor(zoneMarkupUrl?: string, moreStylesUrl?: string, move = true, resize = true) {
     super();
 
     if (move) q(this).attr('move', '');
@@ -55,8 +49,8 @@ export abstract class GriddlerPopupBase extends Popup {
   protected set errors(value: string[]) {
     const $err = this.$body.first('#errors').empty();
     if (value.length > 0) {
-      const $list = $err.appendIn({tag: 'ul'});
-      value.forEach(it => $list.append({tag: 'li', text: it}));
+      const $list = $err.appendIn({ tag: 'ul' });
+      value.forEach((it) => $list.append({ tag: 'li', text: it }));
     }
   }
 

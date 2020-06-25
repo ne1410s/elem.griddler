@@ -1,7 +1,6 @@
 import { GriddlerPopupBase } from '../base/griddler-popup';
 
 export class EditLabelPopup extends GriddlerPopupBase {
-  
   setType: 'columns' | 'rows';
   setIndex: number;
   capacity: number;
@@ -11,7 +10,9 @@ export class EditLabelPopup extends GriddlerPopupBase {
     super();
   }
 
-  private get grace(): number { return this.capacity / 5; }
+  private get grace(): number {
+    return this.capacity / 5;
+  }
 
   protected renderZone() {
     const typeName = this.setType === 'columns' ? 'Column' : 'Row';
@@ -23,20 +24,23 @@ export class EditLabelPopup extends GriddlerPopupBase {
       this.addLabel(this.labels[i]);
     }
   }
-  
-  protected validate(): boolean {
-    const ranged = this.$zone.find('input').elements.reduce((acc, cur) => {
-      const val = parseInt((cur as HTMLInputElement).value);
-      cur.className = '';
-      if (val) {
-        if (acc.tot) acc.tot++;
-        acc.tot += val;
-        acc.res.push(val);
-        cur.className = acc.tot > this.capacity ? 'err' : '';
-      }
 
-      return acc;
-    }, { tot: 0, res: [] as number[], err: [] as string[] });
+  protected validate(): boolean {
+    const ranged = this.$zone.find('input').elements.reduce(
+      (acc, cur) => {
+        const val = parseInt((cur as HTMLInputElement).value);
+        cur.className = '';
+        if (val) {
+          if (acc.tot) acc.tot++;
+          acc.tot += val;
+          acc.res.push(val);
+          cur.className = acc.tot > this.capacity ? 'err' : '';
+        }
+
+        return acc;
+      },
+      { tot: 0, res: [] as number[], err: [] as string[] }
+    );
 
     const diff = ranged.tot - this.capacity;
     if (diff > 0) {
@@ -52,13 +56,14 @@ export class EditLabelPopup extends GriddlerPopupBase {
   }
 
   private addLabel(value?: number) {
-    this.$zone.append({ 
+    this.$zone.append({
       tag: 'input',
       evts: { input: () => this.onLabelInput() },
       attr: {
         type: 'number',
         value: value ? `${value}` : '',
-        min: '0', max: `${this.capacity}`
+        min: '0',
+        max: `${this.capacity}`,
       },
     });
   }
