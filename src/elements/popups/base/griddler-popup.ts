@@ -30,7 +30,8 @@ export abstract class GriddlerPopupBase extends Popup {
       .append(...styleTagParams)
       .find('.body');
 
-    this.$body.first('#btnCancel').on('click', () => this.dismiss());
+    // Clicking cancel bypasses dismiss() handling by closing regardless
+    this.$body.first('#btnCancel').on('click', () => this.close());
     this.$body.first('#btnSave').on('click', () => this.confirm());
 
     this.$zone = this.$body.first('#zone');
