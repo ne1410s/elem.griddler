@@ -104,6 +104,11 @@ export abstract class XGrid {
     plain.rows.forEach((r) => (r.cells = emptyRow.slice()));
   }
 
+  public static WipeLabels(plain: PlainGrid): void {
+    plain.rows.forEach((r) => (r.labels = []));
+    plain.columns.forEach((c) => (c.labels = []));
+  }
+
   public static ScrapeLabels(plain: PlainGrid): void {
     XGrid.ScrapeColumnLabels(plain);
     const denseRows = XGrid.ToDense(plain).r.split('|');

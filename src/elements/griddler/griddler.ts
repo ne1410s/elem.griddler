@@ -71,6 +71,13 @@ export class Griddler extends CustomElementBase {
     return this._grid.rows.every((r) => /^[12,]+$/.test(r.cells + ''));
   }
 
+  get anyLabels(): boolean {
+    return (
+      this._grid.rows.some((r) => r.labels?.length) ||
+      this._grid.columns.some((c) => c.labels?.length)
+    );
+  }
+
   public toString(): string {
     return JSON.stringify(XGrid.ToDense(this._grid));
   }
@@ -200,7 +207,7 @@ export class Griddler extends CustomElementBase {
   /** Removes all cell data, leaving the labels intact. */
   clear() {
     if (!this.isBlank) {
-      this.addToHistory('clear', this.toString());
+      this.addToHistory('clear-grid', this.toString());
       XGrid.WipeCells(this._grid);
       this.refresh();
     }
@@ -593,25 +600,47 @@ export class Griddler extends CustomElementBase {
       }
     });
 
+    // Handler for methods sensitive to the cell reference
+    this.$menu.on('itemselect', (e: CustomEvent) => {
+      const item = e.detail.origin as Element;
+      if (item.matches('.set li')) {
+        const setType = item.closest('.set').id as 'columns' | 'rows';
+        const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
+
+        if (item.matches('.labels .edit')) {
+          this.showLabelModal(setType, setIndex);
+        } else if (item.matches('.labels .clear')) {
+          const set = this._grid[setType][setIndex];
+          const empty = [] as number[];
+          if (empty.join(',') !== set.labels.join(',')) {
+            this.addToHistory('label', this.toString());
+            set.labels = empty;
+            if (setType === 'rows') this.setRowLabels(setIndex, empty);
+            else this.setColumnLabels(setIndex, empty);
+          }
+        }
+      }
+    });
+
     this.$menu.find('#changes .undo').on('click', () => this.undoOne());
     this.$menu.find('#changes .redo').on('click', () => this.gotoHistory(this._historyIndex + 1));
     this.$menu.find('#changes .history').on('click', () => this.showHistoryModal());
 
-    this.$menu.find('.set .labels').on('click', (e) => {
-      const setType = (e.target as Element).closest('.set').id as 'columns' | 'rows';
-      const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
-      this.showLabelModal(setType, setIndex);
-    });
-
     this.$menu.find('#grid .hint').on('click', () => this.hint());
     this.$menu.find('#grid .solve').on('click', () => this.solve());
-    this.$menu.find('#grid .clear').on('click', () => this.clear());
-    this.$menu.find('#grid .spawn').on('click', () => {
-      const prev = this.toString();
+    this.$menu.find('#grid .clear-grid').on('click', () => this.clear());
+    this.$menu.find('#grid .labels .spawn').on('click', () => {
       XGrid.ScrapeLabels(this._grid);
       this.populateLabels();
-      if (prev !== this.toString()) {
-        this.addToHistory('scrape', prev);
+      if (this._menuCoords.snapshot !== this.toString()) {
+        this.addToHistory('spawn', this._menuCoords.snapshot);
+      }
+    });
+    this.$menu.find('#grid .labels .clear').on('click', () => {
+      XGrid.WipeLabels(this._grid);
+      this.populateLabels();
+      if (this._menuCoords.snapshot !== this.toString()) {
+        this.addToHistory('clear-labels', this._menuCoords.snapshot);
       }
     });
 
@@ -660,6 +689,18 @@ export class Griddler extends CustomElementBase {
       .toggle('disabled', this._historyIndex >= this._history.length - 1);
     this.$menu.first('#changes .history').toggle('disabled', !this._history?.length);
     this.$menu.first('#changes').toggle('disabled', (e) => !e.querySelector('li:not(.disabled)'));
+
+    this.$menu.first('#grid .hint').toggle('disabled', this.isFull);
+    this.$menu.first('#grid .solve').toggle('disabled', this.isFull);
+    this.$menu.first('#grid .clear-grid').toggle('disabled', this.isBlank);
+    this.$menu.first('#grid .labels .spawn').toggle('disabled', this.isBlank);
+    this.$menu.first('#grid .labels .clear').toggle('disabled', !this.anyLabels);
+
+    this.$menu.find('.set .labels .clear').toggle('disabled', (e) => {
+      const set =
+        e.closest('.set').id == 'rows' ? this._grid.rows[coords.y] : this._grid.columns[coords.x];
+      return !set?.labels?.length;
+    });
 
     // Reload for changes into shadow DOM
     (this.$menu.get(0) as ContextMenu).reload();
