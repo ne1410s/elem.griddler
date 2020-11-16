@@ -1,3 +1,4 @@
+import { decode, reduceCss, reduceHtml } from '@ne1410s/cust-elems';
 import { q, ChainedQuery } from '@ne1410s/dom';
 import { Popup } from '@ne1410s/popup';
 
@@ -21,12 +22,13 @@ export abstract class GriddlerPopupBase extends Popup {
 
     q(this).on('open', () => this.onOpen());
 
-    const styleTagParams: QuickParam[] = [{ tag: 'style', text: this.decode(stylesUrl) }];
-    if (moreStylesUrl) styleTagParams.push({ tag: 'style', text: this.decode(moreStylesUrl) });
+    const styleTagParams: QuickParam[] = [{ tag: 'style', text: reduceCss(decode(stylesUrl)) }];
+    if (moreStylesUrl)
+      styleTagParams.push({ tag: 'style', text: reduceCss(decode(moreStylesUrl)) });
 
     this.$body = q(this.root)
       .find('.fore')
-      .append(this.decode(markupUrl))
+      .append(reduceHtml(decode(markupUrl)))
       .append(...styleTagParams)
       .find('.body');
 
@@ -36,7 +38,7 @@ export abstract class GriddlerPopupBase extends Popup {
 
     this.$zone = this.$body.first('#zone');
     if (zoneMarkupUrl) {
-      this.$zone.append(this.decode(zoneMarkupUrl));
+      this.$zone.append(reduceHtml(decode(zoneMarkupUrl)));
     }
 
     this.confirmCallback = () => this.validate();
