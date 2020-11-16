@@ -1,4 +1,4 @@
-import { CustomElementBase } from '@ne1410s/cust-elems';
+import { CustomElementBase, decode, reduceCss, reduceHtml } from '@ne1410s/cust-elems';
 import { ContextMenu } from '@ne1410s/menu';
 import { q, ChainedQuery } from '@ne1410s/dom';
 
@@ -18,6 +18,8 @@ import stylesUrl from './griddler.css';
 export class Griddler extends CustomElementBase {
   public static observedAttributes = ['cols', 'rows', 'size'];
 
+  private static readonly Css = reduceCss(decode(stylesUrl));
+  private static readonly Html = reduceHtml(decode(markupUrl));
   private static readonly PIXEL_OFFSET = config.resolution / 2;
 
   private readonly $root: ChainedQuery;
@@ -92,7 +94,7 @@ export class Griddler extends CustomElementBase {
   }
 
   constructor() {
-    super(stylesUrl, markupUrl);
+    super(Griddler.Css, Griddler.Html);
 
     this.$root = q(this.root);
     this.$menu = this.$root.first('ne14-menu');
@@ -607,7 +609,12 @@ export class Griddler extends CustomElementBase {
         const setType = item.closest('.set').id as 'columns' | 'rows';
         const setIndex = setType == 'rows' ? this._menuCoords.y : this._menuCoords.x;
 
-        if (item.matches('.labels .edit')) {
+        if (item.matches('.mark-out')) {
+        } else if (item.matches('.fill-out')) {
+        } else if (item.matches('.solve')) {
+        } else if (item.matches('.clear-set')) {
+        } else if (item.matches('.labels .spawn')) {
+        } else if (item.matches('.labels .edit')) {
           this.showLabelModal(setType, setIndex);
         } else if (item.matches('.labels .clear')) {
           const set = this._grid[setType][setIndex];
