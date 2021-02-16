@@ -39,21 +39,21 @@
   },
   "homepage": "https://github.com/ne1410s/ne14.griddler#readme",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^11.0.1",
+    "@rollup/plugin-node-resolve": "^11.2.0",
     "@rollup/plugin-url": "^6.0.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.36.1",
+    "rollup": "^2.39.0",
     "rollup-plugin-typescript2": "^0.29.0",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.5"
   },
   "dependencies": {
-    "@ne1410s/cust-elems": "^0.2.4",
-    "@ne1410s/dom": "^0.2.13",
-    "@ne1410s/menu": "0.0.13",
-    "@ne1410s/popup": "^0.2.9",
-    "@ne1410s/pxl8r": "0.0.10"
+    "@ne1410s/cust-elems": "^0.2.5",
+    "@ne1410s/dom": "^0.2.14",
+    "@ne1410s/menu": "^0.0.14",
+    "@ne1410s/popup": "^0.2.10",
+    "@ne1410s/pxl8r": "^0.0.11"
   }
 }
