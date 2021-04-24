@@ -45,15 +45,15 @@
     "@rollup/plugin-url": "^6.0.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.44.0",
+    "rollup": "^2.45.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@ne1410s/cust-elems": "^0.2.9",
-    "@ne1410s/dom": "^0.2.18",
-    "@ne1410s/menu": "^0.0.18",
-    "@ne1410s/popup": "^0.2.14",
-    "@ne1410s/pxl8r": "^0.0.15"
+    "@ne1410s/cust-elems": "^0.2.10",
+    "@ne1410s/dom": "^0.2.19",
+    "@ne1410s/menu": "0.0.19",
+    "@ne1410s/popup": "^0.2.15",
+    "@ne1410s/pxl8r": "0.0.16"
   }
 }
