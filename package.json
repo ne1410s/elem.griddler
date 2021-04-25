@@ -52,7 +52,7 @@
   "dependencies": {
     "@ne1410s/cust-elems": "^0.2.11",
     "@ne1410s/dom": "^0.2.20",
-    "@ne1410s/menu": "0.0.19",
+    "@ne1410s/menu": "^0.0.20",
     "@ne1410s/popup": "^0.2.16",
     "@ne1410s/pxl8r": "^0.0.17"
   }
