@@ -1,6 +1,6 @@
 {
   "name": "@ne1410s/griddler",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "description": "Complete package for creating, sharing and solving griddler grids!",
   "main": "dist/ne14_grid.cjs.min.js",
   "module": "dist/ne14_grid.esm.min.js",
