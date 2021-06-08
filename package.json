@@ -50,10 +50,10 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "@ne1410s/cust-elems": "^0.2.19",
+    "@ne1410s/cust-elems": "^0.2.20",
     "@ne1410s/dom": "^0.2.28",
-    "@ne1410s/menu": "^0.0.28",
-    "@ne1410s/popup": "^0.2.24",
-    "@ne1410s/pxl8r": "^0.0.25"
+    "@ne1410s/menu": "^0.0.29",
+    "@ne1410s/popup": "^0.2.25",
+    "@ne1410s/pxl8r": "^0.0.26"
   }
 }
